@@ -135,8 +135,8 @@
     <Compile Include="..\..\utils\prim-parsing.fs">
       <Link>LexYaccRuntime/prim-parsing.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\lazy.fs">
-      <Link>Utilities/lazy.fs</Link>
+    <Compile Include="..\..\utils\unity3d.fs">
+      <Link>Utilities/unity3d.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\resizearray.fsi">
       <Link>Utilities/resizearray.fsi</Link>
@@ -620,14 +620,20 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Build.Engine">
+    <Reference Include="Microsoft.Build.Engine, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v3.5\Profile\Unity Full v3.5\Microsoft.Build.Engine.dll</HintPath>
+      <SpecificVersion>True</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Build.Framework">
+    <Reference Include="Microsoft.Build.Framework, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v3.5\Profile\Unity Full v3.5\Microsoft.Build.Framework.dll</HintPath>
+      <SpecificVersion>True</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Build.Tasks" />
-    <Reference Include="Microsoft.Build.Utilities" />
+    <Reference Include="Microsoft.Build.Tasks, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <SpecificVersion>True</SpecificVersion>
+    </Reference>
+    <Reference Include="Microsoft.Build.Utilities, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <SpecificVersion>True</SpecificVersion>
+    </Reference>
     <Reference Include="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
       <SpecificVersion>True</SpecificVersion>
     </Reference>
