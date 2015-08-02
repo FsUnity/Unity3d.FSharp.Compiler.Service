@@ -54,7 +54,7 @@
   </PropertyGroup>
   <!-- MonoDevelop likes these here to recognise the configurations -->
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <DefineConstants>DEBUG; ;CROSS_PLATFORM_COMPILER;BE_SECURITY_TRANSPARENT;TYPE_PROVIDER_SECURITY;EXTENSIBLE_DUMPER;INCLUDE_METADATA_WRITER;COMPILER;NO_STRONG_NAMES</DefineConstants>
+    <DefineConstants>DEBUG; ;CROSS_PLATFORM_COMPILER;BE_SECURITY_TRANSPARENT;EXTENSIBLE_DUMPER;INCLUDE_METADATA_WRITER;COMPILER;NO_STRONG_NAMES</DefineConstants>
     <Optimize>false</Optimize>
     <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
     <DocumentationFile>..\..\..\bin\$(TargetFrameworkVersion)\FSharp.Compiler.Service.XML</DocumentationFile>
