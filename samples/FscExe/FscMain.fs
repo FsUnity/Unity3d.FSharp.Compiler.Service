@@ -2,7 +2,7 @@
 
 module internal Microsoft.FSharp.Compiler.CommandLineMain
 
-open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Compiler.AbstractIL.IL // runningOnMono 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.ErrorLogger

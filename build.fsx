@@ -31,7 +31,8 @@ let gitHome = "https://github.com/fsharp"
 let gitName = "FSharp.Compiler.Service"
 let gitRaw = environVarOrDefault "gitRaw" "https://raw.githubusercontent.com/fsharp"
 
-let netFrameworks = ["v4.0"; "v4.5"]
+//let netFrameworks = ["v4.0"; "v4.5"]
+let netFrameworks = ["v3.5"]
 
 // --------------------------------------------------------------------------------------
 // The rest of the code is standard F# build script 
@@ -101,6 +102,15 @@ Target "Build" (fun _ ->
     |> List.iter (fun framework -> 
         let outputPath = "bin/" + framework
         !! (project + ".sln")
+        |> MSBuild outputPath "Build" ["Configuration","Release"; "TargetFrameworkVersion", framework]
+        |> Log (".NET " + framework + " Build-Output: "))
+)
+
+Target "CompilerService" (fun _ ->
+    netFrameworks
+    |> List.iter (fun framework -> 
+        let outputPath = "bin/" + framework + "-solo"
+        !! ( @"src\fsharp\FSharp.Compiler.Service\" + project + ".fsproj")
         |> MSBuild outputPath "Build" ["Configuration","Release"; "TargetFrameworkVersion", framework]
         |> Log (".NET " + framework + " Build-Output: "))
 )
