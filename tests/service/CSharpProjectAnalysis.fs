@@ -60,55 +60,55 @@ let getProjectReferences (content, dllFiles, libDirs, otherFlags) =
         |> dict
     results, assemblies
 
-[<Test>]
-let ``Test that csharp references are recognized as such`` () = 
-    let csharpAssembly = typeof<CSharpClass>.Assembly.Location
-    let _, table = getProjectReferences("""module M""", [csharpAssembly], None, None)
-    let ass = table.["CSharp_Analysis"]
-    match ass.Contents.Entities |> Seq.tryFind (fun e -> e.DisplayName = "CSharpClass") with
-    | Some found ->
-        // this is no F# thing
-        found.IsFSharp |> shouldEqual false
-        
-        // Check that we have members
-        let members = found.MembersFunctionsAndValues |> Seq.map (fun e -> e.CompiledName, e) |> dict
-        members.ContainsKey ".ctor" |> shouldEqual true
-        members.ContainsKey "Method" |> shouldEqual true
-        members.ContainsKey "Property" |> shouldEqual true
-        members.ContainsKey "Event" |> shouldEqual true
-        members.ContainsKey "InterfaceMethod" |> shouldEqual true
-        members.ContainsKey "InterfaceProperty" |> shouldEqual true
-        members.ContainsKey "InterfaceEvent" |> shouldEqual true
-
-        //// Check that we get xml docs
-        //String.IsNullOrWhiteSpace(members.[".ctor"].XmlDocSig) |> shouldEqual false
-        //String.IsNullOrWhiteSpace(members.["Method"].XmlDocSig) |> shouldEqual false
-        //String.IsNullOrWhiteSpace(members.["Property"].XmlDocSig) |> shouldEqual false
-        //String.IsNullOrWhiteSpace(members.["Event"].XmlDocSig) |> shouldEqual false
-        //String.IsNullOrWhiteSpace(members.["InterfaceMethod"].XmlDocSig) |> shouldEqual false
-        //String.IsNullOrWhiteSpace(members.["InterfaceProperty"].XmlDocSig) |> shouldEqual false
-        //String.IsNullOrWhiteSpace(members.["InterfaceEvent"].XmlDocSig) |> shouldEqual false
-
-        ()
-    | None -> 
-        Assert.Fail ("CSharpClass was not found in CSharp_Analysis assembly!")
-
-[<Test; Ignore("Failing test for https://github.com/fsharp/FSharp.Compiler.Service/issues/177")>]
-let ``Test that symbols of csharp inner classes/enums are reported`` () = 
-    let csharpAssembly = typeof<CSharpClass>.Assembly.Location
-    let content = """
-module NestedEnumClass
-open FSharp.Compiler.Service.Tests
-
-let _ = CSharpOuterClass.InnerEnum.Case1
-let _ = CSharpOuterClass.InnerClass.StaticMember()
-"""
-
-    let results, _ = getProjectReferences(content, [csharpAssembly], None, None)
-    results.GetAllUsesOfAllSymbols()
-    |> Async.RunSynchronously
-    |> Array.map (fun su -> su.Symbol.ToString())
-    |> shouldEqual 
-        [|"CSharpOuterClass"; "InnerEnum"; "symbol Case1"; 
-          "CSharpOuterClass"; "InnerClass"; "val StaticMember"; 
-          "NestedEnumClass"|]
+//[<Test>]
+//let ``Test that csharp references are recognized as such`` () = 
+//    let csharpAssembly = typeof<CSharpClass>.Assembly.Location
+//    let _, table = getProjectReferences("""module M""", [csharpAssembly], None, None)
+//    let ass = table.["CSharp_Analysis"]
+//    match ass.Contents.Entities |> Seq.tryFind (fun e -> e.DisplayName = "CSharpClass") with
+//    | Some found ->
+//        // this is no F# thing
+//        found.IsFSharp |> shouldEqual false
+//        
+//        // Check that we have members
+//        let members = found.MembersFunctionsAndValues |> Seq.map (fun e -> e.CompiledName, e) |> dict
+//        members.ContainsKey ".ctor" |> shouldEqual true
+//        members.ContainsKey "Method" |> shouldEqual true
+//        members.ContainsKey "Property" |> shouldEqual true
+//        members.ContainsKey "Event" |> shouldEqual true
+//        members.ContainsKey "InterfaceMethod" |> shouldEqual true
+//        members.ContainsKey "InterfaceProperty" |> shouldEqual true
+//        members.ContainsKey "InterfaceEvent" |> shouldEqual true
+//
+//        //// Check that we get xml docs
+//        //String.IsNullOrWhiteSpace(members.[".ctor"].XmlDocSig) |> shouldEqual false
+//        //String.IsNullOrWhiteSpace(members.["Method"].XmlDocSig) |> shouldEqual false
+//        //String.IsNullOrWhiteSpace(members.["Property"].XmlDocSig) |> shouldEqual false
+//        //String.IsNullOrWhiteSpace(members.["Event"].XmlDocSig) |> shouldEqual false
+//        //String.IsNullOrWhiteSpace(members.["InterfaceMethod"].XmlDocSig) |> shouldEqual false
+//        //String.IsNullOrWhiteSpace(members.["InterfaceProperty"].XmlDocSig) |> shouldEqual false
+//        //String.IsNullOrWhiteSpace(members.["InterfaceEvent"].XmlDocSig) |> shouldEqual false
+//
+//        ()
+//    | None -> 
+//        Assert.Fail ("CSharpClass was not found in CSharp_Analysis assembly!")
+//
+//[<Test; Ignore("Failing test for https://github.com/fsharp/FSharp.Compiler.Service/issues/177")>]
+//let ``Test that symbols of csharp inner classes/enums are reported`` () = 
+//    let csharpAssembly = typeof<CSharpClass>.Assembly.Location
+//    let content = """
+//module NestedEnumClass
+//open FSharp.Compiler.Service.Tests
+//
+//let _ = CSharpOuterClass.InnerEnum.Case1
+//let _ = CSharpOuterClass.InnerClass.StaticMember()
+//"""
+//
+//    let results, _ = getProjectReferences(content, [csharpAssembly], None, None)
+//    results.GetAllUsesOfAllSymbols()
+//    |> Async.RunSynchronously
+//    |> Array.map (fun su -> su.Symbol.ToString())
+//    |> shouldEqual 
+//        [|"CSharpOuterClass"; "InnerEnum"; "symbol Case1"; 
+//          "CSharpOuterClass"; "InnerClass"; "val StaticMember"; 
+//          "NestedEnumClass"|]

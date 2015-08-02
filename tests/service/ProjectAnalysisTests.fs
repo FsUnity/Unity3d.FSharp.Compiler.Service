@@ -63,10 +63,12 @@ let attribsOfSymbol (s:FSharpSymbol) =
             if v.IsFSharpUnion then yield "union"
             if v.IsInterface then yield "interface"
             if v.IsMeasure then yield "measure"
+#if EXTENSIONTYPING
             if v.IsProvided then yield "provided"
             if v.IsStaticInstantiation then yield "staticinst"
             if v.IsProvidedAndErased then yield "erased"
             if v.IsProvidedAndGenerated then yield "generated"
+#endif
             if v.IsUnresolved then yield "unresolved"
             if v.IsValueType then yield "valuetype"
 
@@ -204,7 +206,12 @@ let ``Test project1 whole project errors`` () =
 let ``Test project1 should have protected FullName and TryFullName return same results`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
     let rec getFullNameComparisons (entity: FSharpEntity) = 
+#if EXTENSIONTYPING
         seq { if not entity.IsProvided && entity.Accessibility.IsPublic then
+#else
+        seq { if entity.Accessibility.IsPublic then
+#endif
+
                 yield (entity.TryFullName = try Some entity.FullName with _ -> None)
                 for e in entity.NestedEntities do
                     yield! getFullNameComparisons e }
@@ -218,7 +225,11 @@ let ``Test project1 should have protected FullName and TryFullName return same r
 let ``Test project1 should not throw exceptions on entities from referenced assemblies`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
     let rec getAllBaseTypes (entity: FSharpEntity) = 
+#if EXTENSIONTYPING
         seq { if not entity.IsProvided && entity.Accessibility.IsPublic then
+#else
+        seq { if entity.Accessibility.IsPublic then
+#endif
                 if not entity.IsUnresolved then yield entity.BaseType
                 for e in entity.NestedEntities do
                     yield! getAllBaseTypes e }
@@ -3911,7 +3922,9 @@ let ``Test project28 all symbols in signature`` () =
                         | :? FSharpActivePatternCase as ap -> typeName, ap.DisplayName, ap.XmlDocSig
                         | :? FSharpGenericParameter as fsg -> typeName, fsg.DisplayName, ""
                         | :? FSharpParameter as fsp -> typeName, fsp.DisplayName, ""
+#if EXTENSIONTYPING
                         | :? FSharpStaticParameter as fss -> typeName, fss.DisplayName, ""
+#endif
                         | _ -> typeName, s.DisplayName, "unknown")
         |> Seq.toArray
 

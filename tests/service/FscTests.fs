@@ -57,11 +57,13 @@ type PEVerifier () =
 
             let tryGetSdkDir (progFiles : Environment.SpecialFolder) =
                 let progFilesFolder = Environment.GetFolderPath(progFiles)
-                let dI = DirectoryInfo(Path.Combine(progFilesFolder, "Microsoft SDKs", "Windows"))
+                //let dI = DirectoryInfo(Path.Combine(progFilesFolder, "Microsoft SDKs", "Windows"))
+                let dI = DirectoryInfo(Path.Combine(Path.Combine(progFilesFolder, "Microsoft SDKs"), "Windows"))
                 if dI.Exists then Some dI
                 else None
 
-            match Array.tryPick tryGetSdkDir [| Environment.SpecialFolder.ProgramFilesX86; Environment.SpecialFolder.ProgramFiles  |] with
+//            match Array.tryPick tryGetSdkDir [| Environment.SpecialFolder.ProgramFilesX86; Environment.SpecialFolder.ProgramFiles  |] with
+            match Array.tryPick tryGetSdkDir [| Environment.SpecialFolder.ProgramFiles  |] with
             | None -> None
             | Some sdkDir ->
                 match tryFindFile "peverify.exe" sdkDir with
@@ -87,7 +89,8 @@ type PEVerifier () =
         match verifierInfo with
         | Some (verifierPath, switches) -> 
             let id,stdOut,stdErr = execute(verifierPath, sprintf "%s \"%s\"" switches assemblyPath)
-            if id = expectedExitCode && String.IsNullOrWhiteSpace stdErr then ()
+//            if id = expectedExitCode && String.IsNullOrWhiteSpace stdErr then ()
+            if id = expectedExitCode && String.IsNullOrEmpty stdErr then ()
             else
                 printfn "Verification failure, stdout: <<<%s>>>" stdOut
                 printfn "Verification failure, stderr: <<<%s>>>" stdErr

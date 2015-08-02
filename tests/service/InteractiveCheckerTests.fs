@@ -15,7 +15,8 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 let longIdentToString (longIdent: Ast.LongIdent) =
-    String.Join(".", longIdent |> List.map (fun ident -> ident.ToString()))
+    //String.Join(".", longIdent |> List.map (fun ident -> ident.ToString()))
+    String.Join(".", (longIdent |> Array.ofList |> Array.map (fun ident -> ident.ToString())))
 let longIdentWithDotsToString (Ast.LongIdentWithDots (longIdent, _)) = longIdentToString longIdent
 
 let posToTuple (pos: Range.pos) = (pos.Line, pos.Column)
