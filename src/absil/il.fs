@@ -15,6 +15,8 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open System.Collections.Generic
 open System.Collections
+open Microsoft.FSharp.Collections
+open Microsoft.FSharp.Control.LazyExtensions
  
 let logging = false 
 

@@ -28,6 +28,8 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.NativeInterop
+open Microsoft.FSharp.Control
+open Microsoft.FSharp.Control.LazyExtensions
 
 type ILReaderOptions =
     { pdbPath: string option;

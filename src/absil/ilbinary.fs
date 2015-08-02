@@ -7,6 +7,8 @@ open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open Microsoft.FSharp.Control
+open Microsoft.FSharp.Control.LazyExtensions
 
 [<Struct>]
 type TableName(idx: int) = 

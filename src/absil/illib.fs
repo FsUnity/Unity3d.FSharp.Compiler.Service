@@ -9,6 +9,7 @@ open System.Collections
 open System.Collections.Generic
 open Internal.Utilities
 open Internal.Utilities.Collections
+open Microsoft.FSharp.Control.LazyExtensions
 
 // Logical shift right treating int32 as unsigned integer.
 // Code that uses this should probably be adjusted to use unsigned integer types.
@@ -477,13 +478,23 @@ module Hashset =
     let create (n:int) = new Hashset<'T>(n, HashIdentity.Structural)
     let add (t: Hashset<'T>) x = if not (t.ContainsKey x) then t.[x] <- 0
     let fold f (t:Hashset<'T>) acc = Seq.fold (fun z (KeyValue(x,_)) -> f x z) acc t 
+
     let ofList l = 
         let t = new Hashset<'T>(List.length l, HashIdentity.Structural)
         l |> List.iter (fun x -> t.[x] <- 0)
         t
+
+
+
+// Added Extension methods and function to return value to try and enable a proper comilation
+// No idea what adverse effects this hackery may produce
+open Microsoft.FSharp.Control.LazyExtensions
+
+
+
+
         
-module Lazy = 
-    let force (x: Lazy<'T>) = x.Force()
+
 
 //---------------------------------------------------
 // Lists as sets. This is almost always a bad data structure and should be eliminated from the compiler.  

@@ -15,6 +15,8 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 // set to the proper value at build.fs (BuildFrameworkTcImports)
 let parseILGlobals = ref EcmaILGlobals
 
+open Microsoft.FSharp.Control
+open Microsoft.FSharp.Control.LazyExtensions
 // -------------------------------------------------------------------- 
 // Table of parsing and pretty printing data for instructions.
 //   - PP data is only used for instructions with no arguments
