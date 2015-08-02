@@ -1,5 +1,6 @@
 source https://www.nuget.org/api/v2/
 
+nuget FsPowerpack.Community
 nuget NUnit 2.6.3
 nuget NUnit.Runners 2.6.3
 nuget SQLite.Net-PCL 3.0.5
@@ -10,3 +11,4 @@ nuget NuGet.CommandLine
 nuget FAKE
 nuget FSharp.Formatting
 nuget SourceLink.Fake
+nuget TaskParallelLibrary
