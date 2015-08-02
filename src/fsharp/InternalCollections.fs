@@ -3,6 +3,7 @@
 namespace Internal.Utilities.Collections
 open System
 open System.Collections.Generic
+open Internal
 
 #nowarn "44" // This construct is deprecated. This F# library function has been renamed. Use 'isSome' instead
 

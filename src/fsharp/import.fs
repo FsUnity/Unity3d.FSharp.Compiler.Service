@@ -6,6 +6,7 @@ module internal Microsoft.FSharp.Compiler.Import
 
 open System.Reflection
 open System.Collections.Generic
+open Internal
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
@@ -18,6 +19,8 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.Env
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
+
+
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
