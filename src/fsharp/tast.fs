@@ -5,6 +5,7 @@ module internal Microsoft.FSharp.Compiler.Tast
 open System
 open System.Collections.Generic 
 open System.Reflection
+open Internal
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
@@ -22,6 +23,9 @@ open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.QuotationPickler
 open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Compiler.Rational
+
+open Microsoft.FSharp.Control
+open Microsoft.FSharp.Control.LazyExtensions
 
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
