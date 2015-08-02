@@ -104,10 +104,11 @@ module Impl =
     /// Convert an IL type definition accessibility into an F# accessibility
     let getApproxFSharpAccessibilityOfEntity (entity: EntityRef) =
         match metadataOfTycon entity.Deref with
+#if EXTENSIONTYPING
         | ProvidedTypeMetadata _info ->
             // This is an approximation - for generative type providers some type definitions can be private.
             taccessPublic
-
+#endif
         | ILTypeMetadata (_,td) ->
             match td.Access with
             | ILTypeDefAccess.Public
@@ -255,7 +256,12 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     member x.QualifiedName =
         checkIsResolved()
         let fail() = invalidOp (sprintf "the type '%s' does not have a qualified name" x.LogicalName)
+#if EXTENSIONTYPING
         if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail()
+#else
+        if entity.IsTypeAbbrev || entity.IsNamespace then fail()
+#endif
+
         match entity.CompiledRepresentation with
         | CompiledTypeRepr.ILAsmNamed(tref,_,_) -> tref.QualifiedName
         | CompiledTypeRepr.ILAsmOpen _ -> fail()
@@ -268,7 +274,11 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 
     member x.TryFullName =
         if isUnresolved() then None
+#if EXTENSIONTYPING
         elif entity.IsTypeAbbrev || entity.IsProvidedErasedTycon then None
+#else
+        elif entity.IsTypeAbbrev then None
+#endif
         elif entity.IsNamespace  then Some entity.DemangledModuleOrNamespaceName
         else
             match entity.CompiledRepresentation with
@@ -321,7 +331,9 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     member __.IsClass =
         isResolved() &&
         match metadataOfTycon entity.Deref with
+#if EXTENSIONTYPING
         | ProvidedTypeMetadata info -> info.IsClass
+#endif
         | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Class)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.Deref.IsFSharpClassTycon
 
@@ -340,7 +352,9 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     member __.IsDelegate =
         isResolved() &&
         match metadataOfTycon entity.Deref with
+#if EXTENSIONTYPING
         | ProvidedTypeMetadata info -> info.IsDelegate ()
+#endif
         | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Delegate)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.IsFSharpDelegateTycon
 
@@ -1851,7 +1865,12 @@ and FSharpAssembly internal (cenv, ccu: CcuThunk) =
     member __.CodeLocation = ccu.SourceCodeDirectory
     member __.FileName = ccu.FileName
     member __.SimpleName = ccu.AssemblyName
+
+#if EXTENSIONTYPING
     member __.IsProviderGenerated = ccu.IsProviderGenerated
+#else
+    member __.IsProviderGenerated = false
+#endif
     member __.Contents = FSharpAssemblySignature((if ccu.IsUnresolvedReference then cenv else (new cenv(cenv.g, ccu, cenv.tcImports))),  ccu.Contents.ModuleOrNamespaceType)
 
     override x.ToString() = x.QualifiedName
