@@ -17,21 +17,19 @@ open SourceLink
 // Information about the project to be used at NuGet and in AssemblyInfo files
 // --------------------------------------------------------------------------------------
 
-let project = "Unity3d.FSharp.Compiler.Service"
-let authors = ["Microsoft Corporation, Dave Thomas, Anh-Dung Phan, Tomas Petricek, Jared Hester"]
+let project = "FSharp.Compiler.Service"
+let authors = ["Microsoft Corporation, Dave Thomas, Anh-Dung Phan, Tomas Petricek"]
 let summary = "F# compiler services for creating IDE tools, language extensions and for F# embedding"
 let description = """
-  A stripped down version of the FSharp.Compiler.Service designed to run on the Unity .Net 3.5 
-  Full base class platform.
   The F# compiler services package contains a custom build of the F# compiler that
   exposes additional functionality for implementing F# language bindings, additional
   tools based on the compiler or refactoring tools. The package also includes F# 
   interactive service that can be used for embedding F# scripting into your applications."""
-let tags = "F# fsharp interactive compiler editor unity3d"
+let tags = "F# fsharp interactive compiler editor"
 
-let gitHome = "https://github.com/cloudRoutine/Unity3d.FSharp.Compiler.Service"
-let gitName = "Unity3d.FSharp.Compiler.Service"
-let gitRaw = environVarOrDefault "gitRaw" "https://raw.githubusercontent.com/cloudRoutine"
+let gitHome = "https://github.com/fsharp"
+let gitName = "FSharp.Compiler.Service"
+let gitRaw = environVarOrDefault "gitRaw" "https://raw.githubusercontent.com/fsharp"
 
 //let netFrameworks = ["v4.0"; "v4.5"]
 let netFrameworks = ["v3.5"]
@@ -111,7 +109,7 @@ Target "Build" (fun _ ->
 Target "CompilerService" (fun _ ->
     netFrameworks
     |> List.iter (fun framework -> 
-        let outputPath = "bin/" + "Unity-"+ framework 
+        let outputPath = "bin/" + framework + "-solo"
         !! ( @"src\fsharp\FSharp.Compiler.Service\" + project + ".fsproj")
         |> MSBuild outputPath "Build" ["Configuration","Release"; "TargetFrameworkVersion", framework]
         |> Log (".NET " + framework + " Build-Output: "))
