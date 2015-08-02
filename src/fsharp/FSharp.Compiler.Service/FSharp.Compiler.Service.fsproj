@@ -62,7 +62,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <Optimize>true</Optimize>
     <DocumentationFile>..\..\..\bin\$(TargetFrameworkVersion)\FSharp.Compiler.Service.XML</DocumentationFile>
-    <DefineConstants>;CROSS_PLATFORM_COMPILER;BE_SECURITY_TRANSPARENT;TYPE_PROVIDER_SECURITY;EXTENSIBLE_DUMPER;INCLUDE_METADATA_WRITER;COMPILER;NO_STRONG_NAMES</DefineConstants>
+    <DefineConstants>;CROSS_PLATFORM_COMPILER;BE_SECURITY_TRANSPARENT;EXTENSIBLE_DUMPER;INCLUDE_METADATA_WRITER;COMPILER;NO_STRONG_NAMES</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="InstallationDummyFile.txt">
