@@ -2,45 +2,9 @@
 
 namespace Internal.Utilities.Collections
 open System
-open System.Runtime.Serialization
-open System.Runtime.InteropServices
 open System.Collections.Generic
 
 #nowarn "44" // This construct is deprecated. This F# library function has been renamed. Use 'isSome' instead
-
-// Cribbed from  http://referencesource.microsoft.com/#mscorlib/system/weakreferenceoft.cs,c575dbe300e57438
-// TODO finish implementing members
-type WeakReference<'T when 'T : not struct>(target:'T, ?trackResurrection:bool) =
-    let mutable m_handle:IntPtr = IntPtr.Zero
-
-    let mutable _target :'T = Unchecked.defaultof<'T>
-
-    member self.SetTarget(target:'T) =
-        _target <- target
-
-    member self.Target with get() = _target
-        
-
-    member self.TryGetTarget( [<Out>] target:byref<'T>) =
-            let o = self.Target
-            target <- o
-            not (obj.ReferenceEquals(o,null))
-
-//    interface ISerializable with 
-//        member g 
-
-
-//[<AutoOpen>]
-//module internal Extensions =
-//    type WeakReference with
-//        member self.TryGetTarget( [<Out>] target:byref<'T>) =
-//            let o = self.Target
-//            target <- o
-//            o <> null
-
-
-
-        
 
 [<StructuralEquality; NoComparison>]
 type internal ValueStrength<'T when 'T : not struct> =
@@ -49,7 +13,6 @@ type internal ValueStrength<'T when 'T : not struct> =
    | Weak of WeakReference
 #else
    | Weak of WeakReference<'T>
-   //| Weak of WeakReference
 #endif
 
 type internal AgedLookup<'TKey,'TValue when 'TValue : not struct>(keepStrongly:int, areSame, ?onStrongDiscard : ('TValue -> unit), ?keepMax: int) =

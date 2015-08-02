@@ -45,10 +45,10 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Filename
 open Microsoft.FSharp.Compiler.Import
 
-//#if EXTENSIONTYPING
-//open Microsoft.FSharp.Compiler.ExtensionTyping
-//open Microsoft.FSharp.Core.CompilerServices
-//#endif
+#if EXTENSIONTYPING
+open Microsoft.FSharp.Compiler.ExtensionTyping
+open Microsoft.FSharp.Core.CompilerServices
+#endif
 open System.Runtime.CompilerServices
 
 #if DEBUG
@@ -105,10 +105,10 @@ exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileNam
 let RangeOfError(err:PhasedError) = 
   let rec RangeFromException = function
       | ErrorFromAddingConstraint(_,err2,_) -> RangeFromException err2 
-//#if EXTENSIONTYPING
-//      | ExtensionTyping.ProvidedTypeResolutionNoRange(e) -> RangeFromException e
-//      | ExtensionTyping.ProvidedTypeResolution(m,_)
-//#endif
+#if EXTENSIONTYPING
+      | ExtensionTyping.ProvidedTypeResolutionNoRange(e) -> RangeFromException e
+      | ExtensionTyping.ProvidedTypeResolution(m,_)
+#endif
       | ReservedKeyword(_,m)
       | IndentationProblem(_,m)
       | ErrorFromAddingTypeEquation(_,_,_,_,_,m) 
@@ -231,9 +231,9 @@ let RangeOfError(err:PhasedError) =
       // Strip TargetInvocationException wrappers
       | :? System.Reflection.TargetInvocationException as e -> 
           RangeFromException e.InnerException
-//#if EXTENSIONTYPING
-//      | :? TypeProviderError as e -> e.Range |> Some
-//#endif
+#if EXTENSIONTYPING
+      | :? TypeProviderError as e -> e.Range |> Some
+#endif
       
       | _ -> None
   
@@ -346,10 +346,10 @@ let GetErrorNumber(err:PhasedError) =
       | UnresolvedConversionOperator _ -> 93
       // avoid 94-100 for safety
       | ObsoleteError _ -> 101
-//#if EXTENSIONTYPING
-//      | ExtensionTyping.ProvidedTypeResolutionNoRange _
-//      | ExtensionTyping.ProvidedTypeResolution _ -> 103
-//#endif
+#if EXTENSIONTYPING
+      | ExtensionTyping.ProvidedTypeResolutionNoRange _
+      | ExtensionTyping.ProvidedTypeResolution _ -> 103
+#endif
        (* DO NOT CHANGE THE NUMBERS *)
 
       // Strip TargetInvocationException wrappers
@@ -362,9 +362,9 @@ let GetErrorNumber(err:PhasedError) =
       | Failure _ -> 192
       | NumberedError((n,_),_) -> n
       | IllegalFileNameChar(fileName,invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter(fileName,string invalidChar))
-//#if EXTENSIONTYPING
-//      | :? TypeProviderError as e -> e.Number
-//#endif
+#if EXTENSIONTYPING
+      | :? TypeProviderError as e -> e.Number
+#endif
       | _ -> 193
    GetFromException err.Exception
    
@@ -665,13 +665,13 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           os.Append(NotUpperCaseConstructorE().Format) |> ignore
       | ErrorFromAddingConstraint(_,e,_) ->  
           OutputExceptionR os e
-//#if EXTENSIONTYPING
-//      | ExtensionTyping.ProvidedTypeResolutionNoRange(e)
-//      | ExtensionTyping.ProvidedTypeResolution(_,e) -> 
-//          OutputExceptionR os e
-//      | :? TypeProviderError as e ->
-//          os.Append(e.ContextualErrorMessage) |> ignore
-//#endif
+#if EXTENSIONTYPING
+      | ExtensionTyping.ProvidedTypeResolutionNoRange(e)
+      | ExtensionTyping.ProvidedTypeResolution(_,e) -> 
+          OutputExceptionR os e
+      | :? TypeProviderError as e ->
+          os.Append(e.ContextualErrorMessage) |> ignore
+#endif
       | UnresolvedOverloading(_,_,mtext,_) -> 
           os.Append(mtext) |> ignore
       | UnresolvedConversionOperator(denv,fromTy,toTy,_) -> 
@@ -1501,13 +1501,13 @@ let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorS
             relatedErrors |> List.iter OutputRelatedError
 
         match err with
-//#if EXTENSIONTYPING
-//        | {Exception = (:? TypeProviderError as tpe)} ->
-//            tpe.Iter (fun e ->
-//                let newErr = {err with Exception = e}
-//                report newErr
-//            )
-//#endif
+#if EXTENSIONTYPING
+        | {Exception = (:? TypeProviderError as tpe)} ->
+            tpe.Iter (fun e ->
+                let newErr = {err with Exception = e}
+                report newErr
+            )
+#endif
         | x -> report x
 
         errors :> seq<_>
@@ -1810,18 +1810,18 @@ type AssemblyReference =
     override x.ToString() = sprintf "AssemblyReference(%s)" x.Text
 
 type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * AssemblyReference list
-//#if EXTENSIONTYPING
-//type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
-//#endif
+#if EXTENSIONTYPING
+type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
+#endif
 
 type ImportedBinary = 
     { FileName: string;
       RawMetadata: IRawFSharpAssemblyData; 
-//#if EXTENSIONTYPING
-//      ProviderGeneratedAssembly: System.Reflection.Assembly option
-//      IsProviderGenerated: bool;
-//      ProviderGeneratedStaticLinkMap : ProvidedAssemblyStaticLinkingMap option
-//#endif
+#if EXTENSIONTYPING
+      ProviderGeneratedAssembly: System.Reflection.Assembly option
+      IsProviderGenerated: bool;
+      ProviderGeneratedStaticLinkMap : ProvidedAssemblyStaticLinkingMap option
+#endif
       ILAssemblyRefs : ILAssemblyRef list;
       ILScopeRef: ILScopeRef }
 
@@ -1830,10 +1830,10 @@ type ImportedAssembly =
       FSharpViewOfMetadata: CcuThunk;
       AssemblyAutoOpenAttributes: string list;
       AssemblyInternalsVisibleToAttributes: string list;
-//#if EXTENSIONTYPING
-//      IsProviderGenerated: bool
-//      mutable TypeProviders: Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> list;
-//#endif
+#if EXTENSIONTYPING
+      IsProviderGenerated: bool
+      mutable TypeProviders: Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> list;
+#endif
       FSharpOptimizationData : Microsoft.FSharp.Control.Lazy<Option<Opt.LazyModuleInfo>> }
 
 type AvailableImportedAssembly =
@@ -2064,10 +2064,10 @@ type TcConfigBuilder =
       mutable showTimes : bool
       mutable showLoadedAssemblies : bool
       mutable continueAfterParseFailure : bool
-//#if EXTENSIONTYPING
-//      /// show messages about extension type resolution?
-//      mutable showExtensionTypeMessages : bool
-//#endif
+#if EXTENSIONTYPING
+      /// show messages about extension type resolution?
+      mutable showExtensionTypeMessages : bool
+#endif
 
       /// pause between passes? 
       mutable pause : bool
@@ -2229,9 +2229,9 @@ type TcConfigBuilder =
           showTimes = false 
           showLoadedAssemblies = false
           continueAfterParseFailure = false
-//#if EXTENSIONTYPING
-//          showExtensionTypeMessages = false
-//#endif
+#if EXTENSIONTYPING
+          showExtensionTypeMessages = false
+#endif
           pause = false 
           indirectCallArrayMethods = false
           alwaysCallVirt = true
@@ -2725,9 +2725,9 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.showTimes  = data.showTimes
     member x.showLoadedAssemblies = data.showLoadedAssemblies
     member x.continueAfterParseFailure = data.continueAfterParseFailure
-//#if EXTENSIONTYPING
-//    member x.showExtensionTypeMessages  = data.showExtensionTypeMessages    
-//#endif
+#if EXTENSIONTYPING
+    member x.showExtensionTypeMessages  = data.showExtensionTypeMessages    
+#endif
     member x.pause  = data.pause
     member x.indirectCallArrayMethods = data.indirectCallArrayMethods
     member x.alwaysCallVirt = data.alwaysCallVirt
@@ -3710,10 +3710,10 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     let mutable disposed = false
     let mutable ilGlobalsOpt = ilGlobalsOpt
     let mutable tcGlobals = None
-//#if EXTENSIONTYPING
-//    let mutable generatedTypeRoots = new System.Collections.Generic.Dictionary<ILTypeRef, int * ProviderGeneratedType>()
-//#endif
-//    
+#if EXTENSIONTYPING
+    let mutable generatedTypeRoots = new System.Collections.Generic.Dictionary<ILTypeRef, int * ProviderGeneratedType>()
+#endif
+    
     let CheckDisposed() =
         if disposed then assert false
 
@@ -3828,86 +3828,86 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         | UnresolvedImportedAssembly _ -> UnresolvedCcu(assref.QualifiedName)
 
 
-//#if EXTENSIONTYPING
-//    member tcImports.GetProvidedAssemblyInfo(m, assembly: Tainted<ProvidedAssembly>) = 
-//        let anameOpt = assembly.PUntaint((fun assembly -> match assembly with null -> None | a -> Some (a.GetName())), m)
-//        match anameOpt with 
-//        | None -> false, None
-//        | Some aname -> 
-//        let ilShortAssemName = aname.Name
-//        match tcImports.FindCcu (m, ilShortAssemName, lookupOnly=true) with 
-//        | ResolvedCcu ccu -> 
-//            if ccu.IsProviderGenerated then 
-//                let dllinfo = tcImports.FindDllInfo(m,ilShortAssemName)
-//                true, dllinfo.ProviderGeneratedStaticLinkMap
-//            else
-//                false, None
-//
-//        | UnresolvedCcu _ -> 
-//            let g = tcImports.GetTcGlobals()
-//            let ilScopeRef = ILScopeRef.Assembly (ILAssemblyRef.FromAssemblyName aname)
-//            let fileName = aname.Name + ".dll"
-//            let bytes = assembly.PApplyWithProvider((fun (assembly,provider) -> assembly.GetManifestModuleContents(provider)), m).PUntaint(id,m)
-//            let ilModule,ilAssemblyRefs = 
-//                let opts = { ILBinaryReader.mkDefault g.ilg with 
-//                                ILBinaryReader.optimizeForMemory=true
-//                                ILBinaryReader.pdbPath = None }                       
-//                let reader = ILBinaryReader.OpenILModuleReaderFromBytes fileName bytes opts
-//                reader.ILModuleDef, reader.ILAssemblyRefs
-//
-//            let theActualAssembly = assembly.PUntaint((fun x -> x.Handle),m)
-//            let dllinfo = 
-//                { RawMetadata= ImportedBinaryReferenceFromDLL (ilModule, ilAssemblyRefs); 
-//                  FileName=fileName;
-//                  ProviderGeneratedAssembly=Some theActualAssembly
-//                  IsProviderGenerated=true;
-//                  ProviderGeneratedStaticLinkMap= if g.isInteractive then None else Some (ProvidedAssemblyStaticLinkingMap.CreateNew())
-//                  ILScopeRef = ilScopeRef;
-//                  ILAssemblyRefs = ilAssemblyRefs }
-//            tcImports.RegisterDll(dllinfo);
-//            let ccuData = 
-//              { IsFSharp=false;
-//                UsesFSharp20PlusQuotations=false;
-//                InvalidateEvent=(new Event<_>()).Publish;
-//                IsProviderGenerated = true
-//                QualifiedName= Some (assembly.PUntaint((fun a -> a.FullName), m));
-//                Contents = NewCcuContents ilScopeRef m ilShortAssemName (NewEmptyModuleOrNamespaceType Namespace) ;
-//                ILScopeRef = ilScopeRef;
-//                Stamp = newStamp();
-//                SourceCodeDirectory = "";  
-//                FileName = Some fileName
-//                MemberSignatureEquality = (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll g ty1 ty2)
-//                ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
-//                TypeForwarders = Map.empty }
-//                    
-//            let ccu = CcuThunk.Create(ilShortAssemName,ccuData)
-//            let ccuinfo = 
-//                { FSharpViewOfMetadata=ccu; 
-//                  ILScopeRef = ilScopeRef; 
-//                  AssemblyAutoOpenAttributes = [];
-//                  AssemblyInternalsVisibleToAttributes = [];
-//                  IsProviderGenerated = true;
-//                  TypeProviders=[];
-//                  FSharpOptimizationData = notlazy None }
-//            tcImports.RegisterCcu(ccuinfo);
-//            // Yes, it is generative
-//            true, dllinfo.ProviderGeneratedStaticLinkMap
-//
-//    member tcImports.RecordGeneratedTypeRoot root = 
-//        // checking if given ProviderGeneratedType was already recorded before (probably for another set of static parameters) 
-//        let (ProviderGeneratedType(_, ilTyRef, _)) = root
-//        let index = 
-//            match generatedTypeRoots.TryGetValue ilTyRef with
-//            | true,(index, _) -> index
-//            | false, _ -> generatedTypeRoots.Count
-//        generatedTypeRoots.[ilTyRef] <- (index, root)
-//
-//    member tcImports.ProviderGeneratedTypeRoots = 
-//        generatedTypeRoots.Values
-//        |> Seq.sortBy fst
-//        |> Seq.map snd
-//        |> Seq.toList
-//#endif
+#if EXTENSIONTYPING
+    member tcImports.GetProvidedAssemblyInfo(m, assembly: Tainted<ProvidedAssembly>) = 
+        let anameOpt = assembly.PUntaint((fun assembly -> match assembly with null -> None | a -> Some (a.GetName())), m)
+        match anameOpt with 
+        | None -> false, None
+        | Some aname -> 
+        let ilShortAssemName = aname.Name
+        match tcImports.FindCcu (m, ilShortAssemName, lookupOnly=true) with 
+        | ResolvedCcu ccu -> 
+            if ccu.IsProviderGenerated then 
+                let dllinfo = tcImports.FindDllInfo(m,ilShortAssemName)
+                true, dllinfo.ProviderGeneratedStaticLinkMap
+            else
+                false, None
+
+        | UnresolvedCcu _ -> 
+            let g = tcImports.GetTcGlobals()
+            let ilScopeRef = ILScopeRef.Assembly (ILAssemblyRef.FromAssemblyName aname)
+            let fileName = aname.Name + ".dll"
+            let bytes = assembly.PApplyWithProvider((fun (assembly,provider) -> assembly.GetManifestModuleContents(provider)), m).PUntaint(id,m)
+            let ilModule,ilAssemblyRefs = 
+                let opts = { ILBinaryReader.mkDefault g.ilg with 
+                                ILBinaryReader.optimizeForMemory=true
+                                ILBinaryReader.pdbPath = None }                       
+                let reader = ILBinaryReader.OpenILModuleReaderFromBytes fileName bytes opts
+                reader.ILModuleDef, reader.ILAssemblyRefs
+
+            let theActualAssembly = assembly.PUntaint((fun x -> x.Handle),m)
+            let dllinfo = 
+                { RawMetadata= ImportedBinaryReferenceFromDLL (ilModule, ilAssemblyRefs); 
+                  FileName=fileName;
+                  ProviderGeneratedAssembly=Some theActualAssembly
+                  IsProviderGenerated=true;
+                  ProviderGeneratedStaticLinkMap= if g.isInteractive then None else Some (ProvidedAssemblyStaticLinkingMap.CreateNew())
+                  ILScopeRef = ilScopeRef;
+                  ILAssemblyRefs = ilAssemblyRefs }
+            tcImports.RegisterDll(dllinfo);
+            let ccuData = 
+              { IsFSharp=false;
+                UsesFSharp20PlusQuotations=false;
+                InvalidateEvent=(new Event<_>()).Publish;
+                IsProviderGenerated = true
+                QualifiedName= Some (assembly.PUntaint((fun a -> a.FullName), m));
+                Contents = NewCcuContents ilScopeRef m ilShortAssemName (NewEmptyModuleOrNamespaceType Namespace) ;
+                ILScopeRef = ilScopeRef;
+                Stamp = newStamp();
+                SourceCodeDirectory = "";  
+                FileName = Some fileName
+                MemberSignatureEquality = (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll g ty1 ty2)
+                ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
+                TypeForwarders = Map.empty }
+                    
+            let ccu = CcuThunk.Create(ilShortAssemName,ccuData)
+            let ccuinfo = 
+                { FSharpViewOfMetadata=ccu; 
+                  ILScopeRef = ilScopeRef; 
+                  AssemblyAutoOpenAttributes = [];
+                  AssemblyInternalsVisibleToAttributes = [];
+                  IsProviderGenerated = true;
+                  TypeProviders=[];
+                  FSharpOptimizationData = notlazy None }
+            tcImports.RegisterCcu(ccuinfo);
+            // Yes, it is generative
+            true, dllinfo.ProviderGeneratedStaticLinkMap
+
+    member tcImports.RecordGeneratedTypeRoot root = 
+        // checking if given ProviderGeneratedType was already recorded before (probably for another set of static parameters) 
+        let (ProviderGeneratedType(_, ilTyRef, _)) = root
+        let index = 
+            match generatedTypeRoots.TryGetValue ilTyRef with
+            | true,(index, _) -> index
+            | false, _ -> generatedTypeRoots.Count
+        generatedTypeRoots.[ilTyRef] <- (index, root)
+
+    member tcImports.ProviderGeneratedTypeRoots = 
+        generatedTypeRoots.Values
+        |> Seq.sortBy fst
+        |> Seq.map snd
+        |> Seq.toList
+#endif
 
     member tcImports.AttachDisposeAction(action) =
         CheckDisposed()
@@ -3987,10 +3987,10 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             { new Import.AssemblyLoader with 
                  member x.LoadAssembly (m, ilAssemblyRef) = 
                      tcImports.FindCcuFromAssemblyRef(m,ilAssemblyRef)
-//#if EXTENSIONTYPING
-//                 member x.GetProvidedAssemblyInfo (m,assembly) = tcImports.GetProvidedAssemblyInfo (m,assembly)
-//                 member x.RecordGeneratedTypeRoot root = tcImports.RecordGeneratedTypeRoot root
-//#endif
+#if EXTENSIONTYPING
+                 member x.GetProvidedAssemblyInfo (m,assembly) = tcImports.GetProvidedAssemblyInfo (m,assembly)
+                 member x.RecordGeneratedTypeRoot root = tcImports.RecordGeneratedTypeRoot root
+#endif
              }
         new Import.ImportMap (tcImports.GetTcGlobals(), loaderInterface)
 
@@ -4019,170 +4019,170 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         CheckDisposed()
         tcGlobals <- Some g
 
-//#if EXTENSIONTYPING
-//    member private tcImports.InjectProvidedNamespaceOrTypeIntoEntity 
-//            (typeProviderEnvironment, 
-//             tcConfig:TcConfig,
-//             m,entity:Entity,
-//             injectedNamspace,remainingNamespace,
-//             provider, 
-//             st:Tainted<ProvidedType> option) = 
-//        match remainingNamespace with
-//        | next::rest ->
-//            // Inject the namespace entity 
-//            match entity.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryFind(next) with
-//            | Some childEntity ->
-//                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, childEntity, next::injectedNamspace, rest, provider, st)
-//            | None -> 
-//                // Build up the artificial namespace if there is not a real one.
-//                let cpath = CompPath(ILScopeRef.Local, injectedNamspace |> List.rev |> List.map (fun n -> (n,ModuleOrNamespaceKind.Namespace)) )
-//                let newNamespace = NewModuleOrNamespace (Some cpath) taccessPublic (ident(next,rangeStartup)) XmlDoc.Empty [] (notlazy (NewEmptyModuleOrNamespaceType Namespace)) 
-//                entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation(newNamespace)
-//                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, newNamespace, next::injectedNamspace, rest, provider, st)
-//        | [] -> 
-//            match st with
-//            | Some st ->
-//                // Inject the wrapper type into the provider assembly.
-//                //
-//                // Generated types get properly injected into the provided (i.e. generated) assembly CCU in tc.fs
-//
-//                let importProvidedType t = Import.ImportProvidedType (tcImports.GetImportMap()) m t
-//                let isSuppressRelocate = tcConfig.isInteractive || st.PUntaint((fun st -> st.IsSuppressRelocate),m) 
-//                let newEntity = Construct.NewProvidedTycon(typeProviderEnvironment, st, importProvidedType, isSuppressRelocate, m) 
-//                entity.ModuleOrNamespaceType.AddProvidedTypeEntity(newEntity)
-//            | None -> ()
-//
-//            entity.Data.entity_tycon_repr <-
-//                match entity.TypeReprInfo with 
-//                // This is the first extension 
-//                | TNoRepr -> 
-//                    TProvidedNamespaceExtensionPoint(typeProviderEnvironment, [provider])
-//                                
-//                // Add to the existing list of extensions
-//                | TProvidedNamespaceExtensionPoint(resolutionFolder, prior) as repr -> 
-//                    if not(prior |> List.exists(fun r->Tainted.EqTainted r provider)) then 
-//                        TProvidedNamespaceExtensionPoint(resolutionFolder, provider::prior)
-//                    else 
-//                        repr
-//
-//                | _ -> failwith "Unexpected representation in namespace entity referred to by a type provider"
-//
-//    member tcImports.ImportTypeProviderExtensions 
-//               (tpApprovals : ApprovalIO.TypeProviderApprovalStatus list, 
-//                displayPSTypeProviderSecurityDialogBlockingUI, 
-//                tcConfig:TcConfig, 
-//                fileNameOfRuntimeAssembly, 
-//                ilScopeRefOfRuntimeAssembly,
-//                runtimeAssemblyAttributes:ILAttribute list, 
-//                entityToInjectInto, invalidateCcu:Event<_>, m) = 
-//
-//        let startingErrorCount = CompileThreadStatic.ErrorLogger.ErrorCount
-//
-//        // Find assembly level TypeProviderAssemblyAttributes. These will point to the assemblies that 
-//        // have class which implement ITypeProvider and which have TypeProviderAttribute on them.
-//        let providerAssemblies = 
-//            runtimeAssemblyAttributes 
-//            |> List.choose (TryDecodeTypeProviderAssemblyAttr (defaultArg ilGlobalsOpt EcmaILGlobals))
-//            // If no design-time assembly is specified, use the runtime assembly
-//            |> List.map (function null -> Path.GetFileNameWithoutExtension fileNameOfRuntimeAssembly | s -> s)
-//            |> Set.ofList
-//
-//        if providerAssemblies.Count > 0 then
-//
-//            // Find the SystemRuntimeAssemblyVersion value to report in the TypeProviderConfig.
-//#if SILVERLIGHT
-//            let systemRuntimeAssemblyVersion : System.Version = tcConfig.TargetMscorlibVersion
-//#else
-//            let systemRuntimeAssemblyVersion = 
-//                let primaryAssemblyRef = tcConfig.PrimaryAssemblyDllReference()
-//                let resolution = tcConfig.ResolveLibWithDirectories CcuLoadFailureAction.RaiseError primaryAssemblyRef |> Option.get
-//                 // MSDN: this method causes the file to be opened and closed, but the assembly is not added to this domain
-//                let name = System.Reflection.AssemblyName.GetAssemblyName(resolution.resolvedPath)
-//                name.Version
-//#endif
-//
-//            // The callback captured by the TypeProviderConfig. Disconnect when things are disposed
-//            let systemRuntimeContainsType =
-//                let systemRuntimeContainsTypeRef = ref tcImports.SystemRuntimeContainsType
-//                tcImports.AttachDisposeAction(fun () -> systemRuntimeContainsTypeRef := (fun _ -> raise (System.ObjectDisposedException("The type provider has been disposed"))))
-//                fun arg -> systemRuntimeContainsTypeRef.Value arg
-//                
-//            let typeProviderEnvironment = 
-//                 { resolutionFolder       = tcConfig.implicitIncludeDir
-//                   outputFile             = tcConfig.outputFile
-//                   showResolutionMessages = tcConfig.showExtensionTypeMessages 
-//                   referencedAssemblies   = [| for r in resolutions.GetAssemblyResolutions() -> r.resolvedPath |]
-//                   temporaryFolder        = FileSystem.GetTempPathShim() }
-//
-//            let providers = 
-//                [ for assemblyName in providerAssemblies do
-//                      yield ExtensionTyping.GetTypeProvidersOfAssembly(displayPSTypeProviderSecurityDialogBlockingUI, tcConfig.validateTypeProviders, 
-//#if TYPE_PROVIDER_SECURITY
-//                                                                       tpApprovals, 
-//#endif
-//                                                                       fileNameOfRuntimeAssembly, ilScopeRefOfRuntimeAssembly, assemblyName, typeProviderEnvironment, 
-//                                                                       tcConfig.isInvalidationSupported, tcConfig.isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m) ]
-//            let wasApproved = providers |> List.forall (fun (ok,_) -> ok)
-//            let providers = providers |> List.map snd |> List.concat
-//
-//            // Note, type providers are disposable objects. The TcImports owns the provider objects - when/if it is disposed, the providers are disposed.
-//            // We ignore all exceptions from provider disposal.
-//            for provider in providers do 
-//                tcImports.AttachDisposeAction(fun () -> 
-//                    try 
-//                        provider.PUntaintNoFailure(fun x -> x).Dispose() 
-//                    with e -> 
-//                        ())
-//            
-//            // Add the invalidation signal handlers to each provider
-//            for provider in providers do 
-//                provider.PUntaint((fun tp -> 
-//                    let handler = tp.Invalidate.Subscribe(fun _ -> invalidateCcu.Trigger ("The provider '" + fileNameOfRuntimeAssembly + "' reported a change"))  
-//                    tcImports.AttachDisposeAction(fun () -> try handler.Dispose() with _ -> ())), m)  
-//                
-//            match providers with
-//            | [] -> 
-//                if wasApproved then
-//                    warning(Error(FSComp.SR.etHostingAssemblyFoundWithoutHosts(fileNameOfRuntimeAssembly,typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName),m)); 
-//            | _ -> 
-//
-//                if typeProviderEnvironment.showResolutionMessages then
-//                    dprintfn "Found extension type hosting hosting assembly '%s' with the following extensions:" fileNameOfRuntimeAssembly
-//                    providers |> List.iter(fun provider ->dprintfn " %s" (ExtensionTyping.DisplayNameOfTypeProvider(provider.TypeProvider, m)))
-//                    
-//                for provider in providers do 
-//                    try
-//                        // Inject an entity for the namespace, or if one already exists, then record this as a provider
-//                        // for that namespace.
-//                        let rec loop (providedNamespace: Tainted<IProvidedNamespace>) =
-//                            let path = ExtensionTyping.GetProvidedNamespaceAsPath(m,provider,providedNamespace.PUntaint((fun r -> r.NamespaceName), m))
-//                            tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, entityToInjectInto, [],path, provider, None)
-//
-//                            // Inject entities for the types returned by provider.GetTypes(). 
-//                            //
-//                            // NOTE: The types provided by GetTypes() are available for name resolution
-//                            // when the namespace is "opened". This is part of the specification of the language
-//                            // feature.
-//                            let tys = providedNamespace.PApplyArray((fun provider -> provider.GetTypes()), "GetTypes", m)
-//                            let ptys = [| for ty in tys -> ty.PApply((fun ty -> ty |> ProvidedType.CreateNoContext), m) |]
-//                            for st in ptys do 
-//                                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, entityToInjectInto, [], path, provider, Some st)
-//
-//                            for providedNestedNamespace in providedNamespace.PApplyArray((fun provider -> provider.GetNestedNamespaces()), "GetNestedNamespaces", m) do 
-//                                loop providedNestedNamespace
-//
-//                        let providedNamespaces = provider.PApplyArray((fun r -> r.GetNamespaces()), "GetNamespaces", m)
-//                        for providedNamespace in providedNamespaces do
-//                            loop providedNamespace
-//                    with e -> 
-//                        errorRecovery e m
-//
-//                if startingErrorCount<CompileThreadStatic.ErrorLogger.ErrorCount then
-//                    error(Error(FSComp.SR.etOneOrMoreErrorsSeenDuringExtensionTypeSetting(),m))  
-//
-//            providers 
-//        else []
-//#endif
+#if EXTENSIONTYPING
+    member private tcImports.InjectProvidedNamespaceOrTypeIntoEntity 
+            (typeProviderEnvironment, 
+             tcConfig:TcConfig,
+             m,entity:Entity,
+             injectedNamspace,remainingNamespace,
+             provider, 
+             st:Tainted<ProvidedType> option) = 
+        match remainingNamespace with
+        | next::rest ->
+            // Inject the namespace entity 
+            match entity.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryFind(next) with
+            | Some childEntity ->
+                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, childEntity, next::injectedNamspace, rest, provider, st)
+            | None -> 
+                // Build up the artificial namespace if there is not a real one.
+                let cpath = CompPath(ILScopeRef.Local, injectedNamspace |> List.rev |> List.map (fun n -> (n,ModuleOrNamespaceKind.Namespace)) )
+                let newNamespace = NewModuleOrNamespace (Some cpath) taccessPublic (ident(next,rangeStartup)) XmlDoc.Empty [] (notlazy (NewEmptyModuleOrNamespaceType Namespace)) 
+                entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation(newNamespace)
+                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, newNamespace, next::injectedNamspace, rest, provider, st)
+        | [] -> 
+            match st with
+            | Some st ->
+                // Inject the wrapper type into the provider assembly.
+                //
+                // Generated types get properly injected into the provided (i.e. generated) assembly CCU in tc.fs
+
+                let importProvidedType t = Import.ImportProvidedType (tcImports.GetImportMap()) m t
+                let isSuppressRelocate = tcConfig.isInteractive || st.PUntaint((fun st -> st.IsSuppressRelocate),m) 
+                let newEntity = Construct.NewProvidedTycon(typeProviderEnvironment, st, importProvidedType, isSuppressRelocate, m) 
+                entity.ModuleOrNamespaceType.AddProvidedTypeEntity(newEntity)
+            | None -> ()
+
+            entity.Data.entity_tycon_repr <-
+                match entity.TypeReprInfo with 
+                // This is the first extension 
+                | TNoRepr -> 
+                    TProvidedNamespaceExtensionPoint(typeProviderEnvironment, [provider])
+                                
+                // Add to the existing list of extensions
+                | TProvidedNamespaceExtensionPoint(resolutionFolder, prior) as repr -> 
+                    if not(prior |> List.exists(fun r->Tainted.EqTainted r provider)) then 
+                        TProvidedNamespaceExtensionPoint(resolutionFolder, provider::prior)
+                    else 
+                        repr
+
+                | _ -> failwith "Unexpected representation in namespace entity referred to by a type provider"
+
+    member tcImports.ImportTypeProviderExtensions 
+               (tpApprovals : ApprovalIO.TypeProviderApprovalStatus list, 
+                displayPSTypeProviderSecurityDialogBlockingUI, 
+                tcConfig:TcConfig, 
+                fileNameOfRuntimeAssembly, 
+                ilScopeRefOfRuntimeAssembly,
+                runtimeAssemblyAttributes:ILAttribute list, 
+                entityToInjectInto, invalidateCcu:Event<_>, m) = 
+
+        let startingErrorCount = CompileThreadStatic.ErrorLogger.ErrorCount
+
+        // Find assembly level TypeProviderAssemblyAttributes. These will point to the assemblies that 
+        // have class which implement ITypeProvider and which have TypeProviderAttribute on them.
+        let providerAssemblies = 
+            runtimeAssemblyAttributes 
+            |> List.choose (TryDecodeTypeProviderAssemblyAttr (defaultArg ilGlobalsOpt EcmaILGlobals))
+            // If no design-time assembly is specified, use the runtime assembly
+            |> List.map (function null -> Path.GetFileNameWithoutExtension fileNameOfRuntimeAssembly | s -> s)
+            |> Set.ofList
+
+        if providerAssemblies.Count > 0 then
+
+            // Find the SystemRuntimeAssemblyVersion value to report in the TypeProviderConfig.
+#if SILVERLIGHT
+            let systemRuntimeAssemblyVersion : System.Version = tcConfig.TargetMscorlibVersion
+#else
+            let systemRuntimeAssemblyVersion = 
+                let primaryAssemblyRef = tcConfig.PrimaryAssemblyDllReference()
+                let resolution = tcConfig.ResolveLibWithDirectories CcuLoadFailureAction.RaiseError primaryAssemblyRef |> Option.get
+                 // MSDN: this method causes the file to be opened and closed, but the assembly is not added to this domain
+                let name = System.Reflection.AssemblyName.GetAssemblyName(resolution.resolvedPath)
+                name.Version
+#endif
+
+            // The callback captured by the TypeProviderConfig. Disconnect when things are disposed
+            let systemRuntimeContainsType =
+                let systemRuntimeContainsTypeRef = ref tcImports.SystemRuntimeContainsType
+                tcImports.AttachDisposeAction(fun () -> systemRuntimeContainsTypeRef := (fun _ -> raise (System.ObjectDisposedException("The type provider has been disposed"))))
+                fun arg -> systemRuntimeContainsTypeRef.Value arg
+                
+            let typeProviderEnvironment = 
+                 { resolutionFolder       = tcConfig.implicitIncludeDir
+                   outputFile             = tcConfig.outputFile
+                   showResolutionMessages = tcConfig.showExtensionTypeMessages 
+                   referencedAssemblies   = [| for r in resolutions.GetAssemblyResolutions() -> r.resolvedPath |]
+                   temporaryFolder        = FileSystem.GetTempPathShim() }
+
+            let providers = 
+                [ for assemblyName in providerAssemblies do
+                      yield ExtensionTyping.GetTypeProvidersOfAssembly(displayPSTypeProviderSecurityDialogBlockingUI, tcConfig.validateTypeProviders, 
+#if TYPE_PROVIDER_SECURITY
+                                                                       tpApprovals, 
+#endif
+                                                                       fileNameOfRuntimeAssembly, ilScopeRefOfRuntimeAssembly, assemblyName, typeProviderEnvironment, 
+                                                                       tcConfig.isInvalidationSupported, tcConfig.isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m) ]
+            let wasApproved = providers |> List.forall (fun (ok,_) -> ok)
+            let providers = providers |> List.map snd |> List.concat
+
+            // Note, type providers are disposable objects. The TcImports owns the provider objects - when/if it is disposed, the providers are disposed.
+            // We ignore all exceptions from provider disposal.
+            for provider in providers do 
+                tcImports.AttachDisposeAction(fun () -> 
+                    try 
+                        provider.PUntaintNoFailure(fun x -> x).Dispose() 
+                    with e -> 
+                        ())
+            
+            // Add the invalidation signal handlers to each provider
+            for provider in providers do 
+                provider.PUntaint((fun tp -> 
+                    let handler = tp.Invalidate.Subscribe(fun _ -> invalidateCcu.Trigger ("The provider '" + fileNameOfRuntimeAssembly + "' reported a change"))  
+                    tcImports.AttachDisposeAction(fun () -> try handler.Dispose() with _ -> ())), m)  
+                
+            match providers with
+            | [] -> 
+                if wasApproved then
+                    warning(Error(FSComp.SR.etHostingAssemblyFoundWithoutHosts(fileNameOfRuntimeAssembly,typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName),m)); 
+            | _ -> 
+
+                if typeProviderEnvironment.showResolutionMessages then
+                    dprintfn "Found extension type hosting hosting assembly '%s' with the following extensions:" fileNameOfRuntimeAssembly
+                    providers |> List.iter(fun provider ->dprintfn " %s" (ExtensionTyping.DisplayNameOfTypeProvider(provider.TypeProvider, m)))
+                    
+                for provider in providers do 
+                    try
+                        // Inject an entity for the namespace, or if one already exists, then record this as a provider
+                        // for that namespace.
+                        let rec loop (providedNamespace: Tainted<IProvidedNamespace>) =
+                            let path = ExtensionTyping.GetProvidedNamespaceAsPath(m,provider,providedNamespace.PUntaint((fun r -> r.NamespaceName), m))
+                            tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, entityToInjectInto, [],path, provider, None)
+
+                            // Inject entities for the types returned by provider.GetTypes(). 
+                            //
+                            // NOTE: The types provided by GetTypes() are available for name resolution
+                            // when the namespace is "opened". This is part of the specification of the language
+                            // feature.
+                            let tys = providedNamespace.PApplyArray((fun provider -> provider.GetTypes()), "GetTypes", m)
+                            let ptys = [| for ty in tys -> ty.PApply((fun ty -> ty |> ProvidedType.CreateNoContext), m) |]
+                            for st in ptys do 
+                                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, entityToInjectInto, [], path, provider, Some st)
+
+                            for providedNestedNamespace in providedNamespace.PApplyArray((fun provider -> provider.GetNestedNamespaces()), "GetNestedNamespaces", m) do 
+                                loop providedNestedNamespace
+
+                        let providedNamespaces = provider.PApplyArray((fun r -> r.GetNamespaces()), "GetNamespaces", m)
+                        for providedNamespace in providedNamespaces do
+                            loop providedNamespace
+                    with e -> 
+                        errorRecovery e m
+
+                if startingErrorCount<CompileThreadStatic.ErrorLogger.ErrorCount then
+                    error(Error(FSComp.SR.etOneOrMoreErrorsSeenDuringExtensionTypeSetting(),m))  
+
+            providers 
+        else []
+#endif
 
     /// Query information about types available in target system runtime library
     member tcImports.SystemRuntimeContainsType (typeName : string) : bool = 
@@ -4222,20 +4222,20 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
               ILScopeRef = ilScopeRef; 
               AssemblyAutoOpenAttributes = GetAutoOpenAttributes ilg ilModule;
               AssemblyInternalsVisibleToAttributes = GetInternalsVisibleToAttributes ilg ilModule;
-//#if EXTENSIONTYPING
-//              IsProviderGenerated = false; 
-//              TypeProviders = [];
-//#endif
+#if EXTENSIONTYPING
+              IsProviderGenerated = false; 
+              TypeProviders = [];
+#endif
               FSharpOptimizationData = notlazy None }
         tcImports.RegisterCcu(ccuinfo);
         let phase2 () = 
-//#if EXTENSIONTYPING
-//            ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (tpApprovals, displayPSTypeProviderSecurityDialogBlockingUI, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
-//#else
+#if EXTENSIONTYPING
+            ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (tpApprovals, displayPSTypeProviderSecurityDialogBlockingUI, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
+#else
             // to prevent unused parameter warning
             ignore tpApprovals
             ignore displayPSTypeProviderSecurityDialogBlockingUI
-//#endif
+#endif
             [ResolvedImportedAssembly(ccuinfo)]
         phase2
 
@@ -4265,9 +4265,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 let minfo : PickledModuleInfo = data.RawData 
                 let mspec = minfo.mspec 
 
-//#if EXTENSIONTYPING
-//                let invalidateCcu = new Event<_>()
-//#endif
+#if EXTENSIONTYPING
+                let invalidateCcu = new Event<_>()
+#endif
 
                 // Adjust where the code for known F# libraries live relative to the installation of F#
                 let codeDir = 
@@ -4293,11 +4293,11 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                                               SourceCodeDirectory = codeDir  (* note: in some cases we fix up this information later *)
                                               IsFSharp=true
                                               Contents = mspec 
-//#if EXTENSIONTYPING
-//                                              InvalidateEvent=invalidateCcu.Publish
-//                                              IsProviderGenerated = false
-//                                              ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
-//#endif
+#if EXTENSIONTYPING
+                                              InvalidateEvent=invalidateCcu.Publish
+                                              IsProviderGenerated = false
+                                              ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
+#endif
                                               UsesFSharp20PlusQuotations = minfo.usesQuotations
                                               MemberSignatureEquality= (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
                                               TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap,m, ilModule.GetRawTypeForwarders()) })
@@ -4319,24 +4319,24 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                        AssemblyAutoOpenAttributes = ilModule.GetAutoOpenAttributes(ilg)
                        AssemblyInternalsVisibleToAttributes = ilModule.GetInternalsVisibleToAttributes(ilg)
                        FSharpOptimizationData=optdata 
-//#if EXTENSIONTYPING
-//                       IsProviderGenerated = false
-//                       TypeProviders = []
-//#endif
+#if EXTENSIONTYPING
+                       IsProviderGenerated = false
+                       TypeProviders = []
+#endif
                        ILScopeRef = ilScopeRef }  
                 let phase2() = 
-//#if EXTENSIONTYPING
-//                     match ilModule.TryGetRawILModule() with 
-//                     | None -> () // no type providers can be sued without a real IL Module present
-//                     | Some ilModule ->
-//                         ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (tpApprovals, displayPSTypeProviderSecurityDialogBlockingUI, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
-//#else
+#if EXTENSIONTYPING
+                     match ilModule.TryGetRawILModule() with 
+                     | None -> () // no type providers can be sued without a real IL Module present
+                     | Some ilModule ->
+                         ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (tpApprovals, displayPSTypeProviderSecurityDialogBlockingUI, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
+#else
                      // to prevent unused parameter warning
                      ignore tpApprovals
                      ignore displayPSTypeProviderSecurityDialogBlockingUI
 
                      ()
-//#endif
+#endif
                 data,ccuinfo,phase2)
                      
         // Register all before relinking to cope with mutually-referential ccus 
@@ -4345,9 +4345,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             (* Relink *)
             (* dprintf "Phase2: %s\n" filename; REMOVE DIAGNOSTICS *)
             ccuRawDataAndInfos |> List.iter (fun (data,_,_) -> data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(m,nm,lookupOnly=false))) |> ignore);
-//#if EXTENSIONTYPING
-//            ccuRawDataAndInfos |> List.iter (fun (_,_,phase2) -> phase2())
-//#endif
+#if EXTENSIONTYPING
+            ccuRawDataAndInfos |> List.iter (fun (_,_,phase2) -> phase2())
+#endif
             ccuRawDataAndInfos |> List.map p23 |> List.map ResolvedImportedAssembly  
         phase2
          
@@ -4379,11 +4379,11 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         else 
             let dllinfo = {RawMetadata=assemblyData 
                            FileName=filename
-//#if EXTENSIONTYPING
-//                           ProviderGeneratedAssembly=None
-//                           IsProviderGenerated=false
-//                           ProviderGeneratedStaticLinkMap = None
-//#endif
+#if EXTENSIONTYPING
+                           ProviderGeneratedAssembly=None
+                           IsProviderGenerated=false
+                           ProviderGeneratedStaticLinkMap = None
+#endif
                            ILScopeRef = ilScopeRef
                            ILAssemblyRefs = assemblyData.ILAssemblyRefs }
             tcImports.RegisterDll(dllinfo)
@@ -4404,11 +4404,11 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     member tcImports.RegisterAndImportReferencedAssemblies (displayPSTypeProviderSecurityDialogBlockingUI, nms:AssemblyResolution list) =
         CheckDisposed()
 
-//#if TYPE_PROVIDER_SECURITY
-//        let tpApprovals = ExtensionTyping.ApprovalIO.ReadApprovalsFile(None)
-//#else
+#if TYPE_PROVIDER_SECURITY
+        let tpApprovals = ExtensionTyping.ApprovalIO.ReadApprovalsFile(None)
+#else
         let tpApprovals = []
-//#endif
+#endif
         let dllinfos,phase2s = 
            nms |> List.choose 
                     (fun nm ->
@@ -4445,15 +4445,15 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             if tryFile (assemblyName + ".dll") then ()
             else tryFile (assemblyName + ".exe")  |> ignore
 
-//#if EXTENSIONTYPING
-//    member tcImports.TryFindProviderGeneratedAssemblyByName(assemblyName:string) :  System.Reflection.Assembly option = 
-//        // The assembly may not be in the resolutions, but may be in the load set including EST injected assemblies
-//        match tcImports.TryFindDllInfo (range0,assemblyName,lookupOnly=true) with 
-//        | Some res -> 
-//            // Provider-generated assemblies don't necessarily have an on-disk representation we can load.
-//            res.ProviderGeneratedAssembly 
-//        | _ -> None
-//#endif
+#if EXTENSIONTYPING
+    member tcImports.TryFindProviderGeneratedAssemblyByName(assemblyName:string) :  System.Reflection.Assembly option = 
+        // The assembly may not be in the resolutions, but may be in the load set including EST injected assemblies
+        match tcImports.TryFindDllInfo (range0,assemblyName,lookupOnly=true) with 
+        | Some res -> 
+            // Provider-generated assemblies don't necessarily have an on-disk representation we can load.
+            res.ProviderGeneratedAssembly 
+        | _ -> None
+#endif
 
     member tcImports.TryFindExistingFullyQualifiedPathFromAssemblyRef(assref:ILAssemblyRef) :  string option = 
         match resolutions.TryFindByExactILAssemblyRef assref with 
@@ -4464,7 +4464,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 let assemblyName = assref.Name
                 match tcImports.TryFindDllInfo (range0,assemblyName,lookupOnly=true) with 
                 | Some res -> 
-//#if EXTENSIONTYPING
+#if EXTENSIONTYPING
                     // Provider-generated assemblies don't necessarily have an on-disk representation we can load.
                     if res.IsProviderGenerated then None else 
 #endif
@@ -5161,11 +5161,11 @@ let TypecheckInitialState(m,ccuName,tcConfig:TcConfig,tcGlobals,tcImports:TcImpo
     let ccu = 
       CcuThunk.Create(ccuName,{IsFSharp=true
                                UsesFSharp20PlusQuotations=false
-//#if EXTENSIONTYPING
-//                               InvalidateEvent=(new Event<_>()).Publish
-//                               IsProviderGenerated = false
-//                               ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
-//#endif
+#if EXTENSIONTYPING
+                               InvalidateEvent=(new Event<_>()).Publish
+                               IsProviderGenerated = false
+                               ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
+#endif
                                FileName=None 
                                Stamp = newStamp()
                                QualifiedName= None

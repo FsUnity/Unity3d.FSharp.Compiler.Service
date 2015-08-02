@@ -19,9 +19,9 @@ open Microsoft.FSharp.Compiler.Env
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Lib
 
-//#if EXTENSIONTYPING
-//open Microsoft.FSharp.Compiler.ExtensionTyping
-//#endif
+#if EXTENSIONTYPING
+open Microsoft.FSharp.Compiler.ExtensionTyping
+#endif
 
 //-------------------------------------------------------------------------
 // Type equivalence
@@ -942,9 +942,9 @@ val mkPrintfFormatTy : TcGlobals -> TType -> TType -> TType -> TType -> TType ->
 type TypeDefMetadata = 
      | ILTypeMetadata of ILScopeRef * ILTypeDef
      | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
-//#if EXTENSIONTYPING
-//     | ProvidedTypeMetadata of  TProvidedTypeInfo
-//#endif
+#if EXTENSIONTYPING
+     | ProvidedTypeMetadata of  TProvidedTypeInfo
+#endif
 
 val metadataOfTycon : Tycon -> TypeDefMetadata
 val metadataOfTy : TcGlobals -> TType -> TypeDefMetadata

@@ -155,19 +155,19 @@ module internal Params =
             )
         (args,argsL) ||> List.zip |> List.map mkParam
 
-//#if EXTENSIONTYPING
-//    let (|ItemIsTypeWithStaticArguments|_|) g item =
-//        match item with
-//        | Item.Types(_name,tys) ->
-//            match tys with
-//            | [Microsoft.FSharp.Compiler.Tastops.AppTy g (tyconRef,_typeInst)] ->
-//                if tyconRef.IsProvidedErasedTycon || tyconRef.IsProvidedGeneratedTycon then
-//                    Some tyconRef
-//                else
-//                    None
-//            | _ -> None
-//        | _ -> None
-//#endif
+#if EXTENSIONTYPING
+    let (|ItemIsTypeWithStaticArguments|_|) g item =
+        match item with
+        | Item.Types(_name,tys) ->
+            match tys with
+            | [Microsoft.FSharp.Compiler.Tastops.AppTy g (tyconRef,_typeInst)] ->
+                if tyconRef.IsProvidedErasedTycon || tyconRef.IsProvidedGeneratedTycon then
+                    Some tyconRef
+                else
+                    None
+            | _ -> None
+        | _ -> None
+#endif
 
     let rec ParamsOfItem (infoReader:InfoReader) m denv d = 
         let amap = infoReader.amap
@@ -242,28 +242,28 @@ module internal Params =
         | Item.DelegateCtor delty -> 
             let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomeFSharpCode
             ParamsOfParamDatas g denv [ParamData(false, false, NotOptional, None, ReflectedArgInfo.None, fty)] delty
-//#if EXTENSIONTYPING
-//        | ItemIsTypeWithStaticArguments g tyconRef ->
-//            // similar code to TcProvidedTypeAppToStaticConstantArgs 
-//            let typeBeforeArguments = 
-//                match tyconRef.TypeReprInfo with 
-//                | TProvidedTypeExtensionPoint info -> info.ProvidedType
-//                | _ -> failwith "unreachable"
-//            let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments,provider) -> typeBeforeArguments.GetStaticParameters(provider)), range=m) 
-//            let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters",m)
-//            staticParameters 
-//                |> Array.map (fun sp -> 
-//                    let typ = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType),m))
-//                    let spKind = NicePrint.stringOfTy denv typ
-//                    let spName = sp.PUntaint((fun sp -> sp.Name), m)
-//                    let spOpt = sp.PUntaint((fun sp -> sp.IsOptional), m)
-//                    FSharpMethodGroupItemParameter(
-//                      name = spName,
-//                      canonicalTypeTextForSorting = spKind,
-//                      display = sprintf "%s%s: %s" (if spOpt then "?" else "") spName spKind,
-//                      description = ""))
-//                |> Array.toList 
-//#endif
+#if EXTENSIONTYPING
+        | ItemIsTypeWithStaticArguments g tyconRef ->
+            // similar code to TcProvidedTypeAppToStaticConstantArgs 
+            let typeBeforeArguments = 
+                match tyconRef.TypeReprInfo with 
+                | TProvidedTypeExtensionPoint info -> info.ProvidedType
+                | _ -> failwith "unreachable"
+            let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments,provider) -> typeBeforeArguments.GetStaticParameters(provider)), range=m) 
+            let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters",m)
+            staticParameters 
+                |> Array.map (fun sp -> 
+                    let typ = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType),m))
+                    let spKind = NicePrint.stringOfTy denv typ
+                    let spName = sp.PUntaint((fun sp -> sp.Name), m)
+                    let spOpt = sp.PUntaint((fun sp -> sp.IsOptional), m)
+                    FSharpMethodGroupItemParameter(
+                      name = spName,
+                      canonicalTypeTextForSorting = spKind,
+                      display = sprintf "%s%s: %s" (if spOpt then "?" else "") spName spKind,
+                      description = ""))
+                |> Array.toList 
+#endif
         |  _ -> []
 
 
@@ -288,9 +288,9 @@ type FSharpMethodGroupItem(description: FSharpToolTipText, typeText: string, par
 type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] ) = 
     // BUG 413009 : [ParameterInfo] takes about 3 seconds to move from one overload parameter to another
     // cache allows to avoid recomputing parameterinfo for the same item
-//#if FX_ATLEAST_40
-//    static let methodOverloadsCache = System.Runtime.CompilerServices.ConditionalWeakTable()
-//#endif
+#if FX_ATLEAST_40
+    static let methodOverloadsCache = System.Runtime.CompilerServices.ConditionalWeakTable()
+#endif
 
     let methods = 
         unsortedMethods 
@@ -315,11 +315,11 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
         if isNil items then new FSharpMethodGroup("", [| |]) else
         let name = items.Head.DisplayName 
         let getOverloadsForItem item =
-//#if FX_ATLEAST_40
-//            match methodOverloadsCache.TryGetValue item with
-//            | true, overloads -> overloads
-//            | false, _ ->
-//#endif
+#if FX_ATLEAST_40
+            match methodOverloadsCache.TryGetValue item with
+            | true, overloads -> overloads
+            | false, _ ->
+#endif
                 let items =
                     match item with 
                     | Item.MethodGroup(nm,minfos) -> List.map (fun minfo -> Item.MethodGroup(nm,[minfo])) minfos 
@@ -340,9 +340,9 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
                     | Item.Property(_,pinfos) -> 
                         let pinfo = List.head pinfos 
                         if pinfo.IsIndexer then [item] else []
-//#if EXTENSIONTYPING
-//                    | Params.ItemIsTypeWithStaticArguments g _ -> [item] // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
-//#endif
+#if EXTENSIONTYPING
+                    | Params.ItemIsTypeWithStaticArguments g _ -> [item] // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
+#endif
                     | Item.CustomOperation(_name, _helpText, _minfo) -> [item]
                     | Item.TypeVar _ -> []
                     | Item.CustomBuilder _ -> []
@@ -356,9 +356,9 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
                           parameters = Array.ofList (Params.ParamsOfItem infoReader m denv item),
                           isStaticArguments = (match item with | Item.Types _ -> true | _ -> false)
                         ))
-//#if FX_ATLEAST_40
-//                methodOverloadsCache.Add(item, methods)
-//#endif
+#if FX_ATLEAST_40
+                methodOverloadsCache.Add(item, methods)
+#endif
                 methods
         let methods = [| for item in items do yield! getOverloadsForItem item |]
 
@@ -1407,9 +1407,9 @@ type TypeCheckInfo
                     | Item.Property(_,pinfos) -> 
                         let pinfo = List.head pinfos 
                         if pinfo.IsIndexer then [item] else []
-//#if EXTENSIONTYPING
-//                    | Params.ItemIsTypeWithStaticArguments g _ -> [item] // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
-//#endif
+#if EXTENSIONTYPING
+                    | Params.ItemIsTypeWithStaticArguments g _ -> [item] // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
+#endif
                     | Item.CustomOperation(_name, _helpText, _minfo) -> [item]
                     | Item.TypeVar _ -> []
                     | Item.CustomBuilder _ -> []
@@ -1439,14 +1439,14 @@ type TypeCheckInfo
 
               let fail defaultReason = 
                   match item with            
-//#if EXTENSIONTYPING
-//                  | Params.ItemIsTypeWithStaticArguments g (tcref) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedType(tcref.DisplayName))
-//                  | Item.CtorGroup(name, ProvidedMeth(_)::_)
-//                  | Item.MethodGroup(name, ProvidedMeth(_)::_)
-//                  | Item.Property(name, ProvidedProp(_)::_) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedMember(name))
-//                  | Item.Event(ProvidedEvent(_) as e) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedMember(e.EventName))
-//                  | Item.ILField(ProvidedField(_) as f) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedMember(f.FieldName))
-//#endif
+#if EXTENSIONTYPING
+                  | Params.ItemIsTypeWithStaticArguments g (tcref) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedType(tcref.DisplayName))
+                  | Item.CtorGroup(name, ProvidedMeth(_)::_)
+                  | Item.MethodGroup(name, ProvidedMeth(_)::_)
+                  | Item.Property(name, ProvidedProp(_)::_) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedMember(name))
+                  | Item.Event(ProvidedEvent(_) as e) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedMember(e.EventName))
+                  | Item.ILField(ProvidedField(_) as f) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedMember(f.FieldName))
+#endif
                   | _ -> FSharpFindDeclResult.DeclNotFound defaultReason
 
               match rangeOfItem g preferFlag item with
@@ -1562,13 +1562,13 @@ module internal Parser =
                             errorCount <- errorCount + 1
                       
                 match exn with
-//#if EXTENSIONTYPING
-//                | {Exception = (:? TypeProviderError as tpe)} ->
-//                    tpe.Iter (fun e ->
-//                        let newExn = {exn with Exception = e}
-//                        report newExn
-//                    )
-//#endif
+#if EXTENSIONTYPING
+                | {Exception = (:? TypeProviderError as tpe)} ->
+                    tpe.Iter (fun e ->
+                        let newExn = {exn with Exception = e}
+                        report newExn
+                    )
+#endif
                 | e -> report e
       
         let errorLogger = 
@@ -2275,9 +2275,9 @@ type BackgroundCompiler(projectCacheSize, keepAssemblyContents, keepAllBackgroun
     member bc.ParseFileInProject(filename:string, source,options:FSharpProjectOptions) =
         reactor.EnqueueAndAwaitOpAsync <| fun () -> 
         
-//#if TYPE_PROVIDER_SECURITY
-//            ExtensionTyping.GlobalsTheLanguageServiceCanPoke.theMostRecentFileNameWeChecked <- Some filename
-//#endif
+#if TYPE_PROVIDER_SECURITY
+            ExtensionTyping.GlobalsTheLanguageServiceCanPoke.theMostRecentFileNameWeChecked <- Some filename
+#endif
             let builderOpt,creationErrors,_ = getOrCreateBuilder options 
             match builderOpt with
             | None -> FSharpParseFileResults(List.toArray creationErrors, None, true, [])
@@ -2352,9 +2352,9 @@ type BackgroundCompiler(projectCacheSize, keepAssemblyContents, keepAllBackgroun
     member bc.ParseAndCheckFileInProject(filename:string, source, options:FSharpProjectOptions,isResultObsolete,textSnapshotInfo,cachedResults) =
         reactor.EnqueueAndAwaitOpAsync <| fun () -> 
         
-//#if TYPE_PROVIDER_SECURITY
-//            ExtensionTyping.GlobalsTheLanguageServiceCanPoke.theMostRecentFileNameWeChecked <- Some filename
-//#endif
+#if TYPE_PROVIDER_SECURITY
+            ExtensionTyping.GlobalsTheLanguageServiceCanPoke.theMostRecentFileNameWeChecked <- Some filename
+#endif
             let builderOpt,creationErrors,_ = getOrCreateBuilder options // Q: Whis it it ok to ignore creationErrors in the build cache? A: These errors will be appended into the typecheck results
             match builderOpt with
             | None -> 

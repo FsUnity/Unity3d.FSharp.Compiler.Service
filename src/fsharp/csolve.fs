@@ -1270,11 +1270,11 @@ and RecordMemberConstraintSolution css m trace traitInfo res =
 
 /// Convert a MethInfo into the data we save in the TAST
 and MemberConstraintSolutionOfMethInfo css m minfo minst = 
-//#if EXTENSIONTYPING
-//#else
+#if EXTENSIONTYPING
+#else
     // to prevent unused parameter warning
     ignore css
-//#endif
+#endif
     match minfo with 
     | ILMeth(_,ilMeth,_) ->
        let mref = IL.mkRefToILMethod (ilMeth.DeclaringTyconRef.CompiledRepresentationForNamedType,ilMeth.RawMetadata)
@@ -1284,30 +1284,30 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
        FSMethSln(typ,vref,minst)
     | MethInfo.DefaultStructCtor _ -> 
        error(InternalError("the default struct constructor was the unexpected solution to a trait constraint",m))
-//#if EXTENSIONTYPING
-//    | ProvidedMeth(amap,mi,_,m) -> 
-//        let g = amap.g
-//        let minst = []   // GENERIC TYPE PROVIDERS: for generics, we would have an minst here
-//        let allArgVars, allArgs = minfo.GetParamTypes(amap, m, minst) |> List.concat |> List.mapi (fun i ty -> mkLocal m ("arg"+string i) ty) |> List.unzip
-//        let objArgVars, objArgs = (if minfo.IsInstance then [mkLocal m "this" minfo.EnclosingType] else []) |> List.unzip
-//        let callMethInfoOpt, callExpr,callExprTy = Typrelns.ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall css.TcVal (g, amap, mi, objArgs, NeverMutates, false, ValUseFlag.NormalValUse, allArgs, m) 
-//        let closedExprSln = ClosedExprSln (mkLambdas m [] (objArgVars@allArgVars) (callExpr, callExprTy) )
-//        // If the call is a simple call to an IL method with all the arguments in the natural order, then revert to use ILMethSln.
-//        // This is important for calls to operators on generated provided types. There is an (unchecked) condition
-//        // that generative providers do not re=order arguments or insert any more information into operator calls.
-//        match callMethInfoOpt, callExpr with 
-//        | Some methInfo, Expr.Op(TOp.ILCall(_useCallVirt,_isProtected,_,_isNewObj,NormalValUse,_isProp,_noTailCall,ilMethRef,_actualTypeInst,actualMethInst,_ilReturnTys),[],args,m)
-//             when (args, (objArgVars@allArgVars)) ||> List.lengthsEqAndForall2 (fun a b -> match a with Expr.Val(v,_,_) -> valEq v.Deref b | _ -> false) ->
-//                let declaringType = Import.ImportProvidedType amap m (methInfo.PApply((fun x -> x.DeclaringType), m))
-//                if isILAppTy g declaringType then 
-//                    let extOpt = None  // EXTENSION METHODS FROM TYPE PROVIDERS: for extension methods coming from the type providers we would have something here.
-//                    ILMethSln(declaringType,extOpt,ilMethRef,actualMethInst)
-//                else
-//                    closedExprSln
-//        | _ -> 
-//                closedExprSln
-//
-//#endif
+#if EXTENSIONTYPING
+    | ProvidedMeth(amap,mi,_,m) -> 
+        let g = amap.g
+        let minst = []   // GENERIC TYPE PROVIDERS: for generics, we would have an minst here
+        let allArgVars, allArgs = minfo.GetParamTypes(amap, m, minst) |> List.concat |> List.mapi (fun i ty -> mkLocal m ("arg"+string i) ty) |> List.unzip
+        let objArgVars, objArgs = (if minfo.IsInstance then [mkLocal m "this" minfo.EnclosingType] else []) |> List.unzip
+        let callMethInfoOpt, callExpr,callExprTy = Typrelns.ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall css.TcVal (g, amap, mi, objArgs, NeverMutates, false, ValUseFlag.NormalValUse, allArgs, m) 
+        let closedExprSln = ClosedExprSln (mkLambdas m [] (objArgVars@allArgVars) (callExpr, callExprTy) )
+        // If the call is a simple call to an IL method with all the arguments in the natural order, then revert to use ILMethSln.
+        // This is important for calls to operators on generated provided types. There is an (unchecked) condition
+        // that generative providers do not re=order arguments or insert any more information into operator calls.
+        match callMethInfoOpt, callExpr with 
+        | Some methInfo, Expr.Op(TOp.ILCall(_useCallVirt,_isProtected,_,_isNewObj,NormalValUse,_isProp,_noTailCall,ilMethRef,_actualTypeInst,actualMethInst,_ilReturnTys),[],args,m)
+             when (args, (objArgVars@allArgVars)) ||> List.lengthsEqAndForall2 (fun a b -> match a with Expr.Val(v,_,_) -> valEq v.Deref b | _ -> false) ->
+                let declaringType = Import.ImportProvidedType amap m (methInfo.PApply((fun x -> x.DeclaringType), m))
+                if isILAppTy g declaringType then 
+                    let extOpt = None  // EXTENSION METHODS FROM TYPE PROVIDERS: for extension methods coming from the type providers we would have something here.
+                    ILMethSln(declaringType,extOpt,ilMethRef,actualMethInst)
+                else
+                    closedExprSln
+        | _ -> 
+                closedExprSln
+
+#endif
 
 and MemberConstraintSolutionOfRecdFieldInfo rfinfo isSet = 
  

@@ -27,9 +27,9 @@ open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.Infos.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Nameres
 
-//#if EXTENSIONTYPING
-//open Microsoft.FSharp.Compiler.ExtensionTyping
-//#endif
+#if EXTENSIONTYPING
+open Microsoft.FSharp.Compiler.ExtensionTyping
+#endif
 
 //-------------------------------------------------------------------------
 // a :> b without coercion based on finalized (no type variable) types
@@ -705,10 +705,10 @@ module SignatureConformance = begin
             | (TRecdRepr _ 
               | TFiniteUnionRepr _ 
               | TILObjModelRepr _ 
-//#if EXTENSIONTYPING
-//              | TProvidedTypeExtensionPoint _ 
-//              | TProvidedNamespaceExtensionPoint _
-//#endif
+#if EXTENSIONTYPING
+              | TProvidedTypeExtensionPoint _ 
+              | TProvidedNamespaceExtensionPoint _
+#endif
               ), TNoRepr  -> true
             | (TFsObjModelRepr r), TNoRepr  -> 
                 match r.fsobjmodel_kind with 
@@ -757,13 +757,13 @@ module SignatureConformance = begin
             | (TMeasureableRepr ty1),  (TMeasureableRepr ty2) -> 
                 if typeAEquiv g aenv ty1 ty2 then true else (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer); false)
             | TNoRepr, TNoRepr -> true
-//#if EXTENSIONTYPING
-//            | TProvidedTypeExtensionPoint info1 , TProvidedTypeExtensionPoint info2 ->  
-//                Tainted.EqTainted info1.ProvidedType.TypeProvider info2.ProvidedType.TypeProvider && ProvidedType.TaintedEquals(info1.ProvidedType,info2.ProvidedType)
-//            | TProvidedNamespaceExtensionPoint _, TProvidedNamespaceExtensionPoint _ -> 
-//                System.Diagnostics.Debug.Assert(false, "unreachable: TProvidedNamespaceExtensionPoint only on namespaces, not types" )
-//                true
-//#endif
+#if EXTENSIONTYPING
+            | TProvidedTypeExtensionPoint info1 , TProvidedTypeExtensionPoint info2 ->  
+                Tainted.EqTainted info1.ProvidedType.TypeProvider info2.ProvidedType.TypeProvider && ProvidedType.TaintedEquals(info1.ProvidedType,info2.ProvidedType)
+            | TProvidedNamespaceExtensionPoint _, TProvidedNamespaceExtensionPoint _ -> 
+                System.Diagnostics.Debug.Assert(false, "unreachable: TProvidedNamespaceExtensionPoint only on namespaces, not types" )
+                true
+#endif
             | TNoRepr, _ -> (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer); false)
             | _, _ -> (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer); false)
 
@@ -1953,9 +1953,9 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv,
   
     // Note you only have to explicitly implement 'System.IComparable' to customize structural comparison AND equality on F# types 
     if isImplementation &&
-//#if EXTENSIONTYPING
-//       not tycon.IsProvidedGeneratedTycon &&
-//#endif
+#if EXTENSIONTYPING
+       not tycon.IsProvidedGeneratedTycon &&
+#endif
        isNone tycon.GeneratedCompareToValues &&
        tycon.HasInterface g g.mk_IComparable_ty && 
        not (tycon.HasOverride g "Equals" [g.obj_ty]) && 
@@ -1970,9 +1970,9 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv,
     Augment.CheckAugmentationAttribs isImplementation g amap tycon
     // Check some conditions about generic comparison and hashing. We can only check this condition after we've done the augmentation 
     if isImplementation 
-//#if EXTENSIONTYPING
-//       && not tycon.IsProvidedGeneratedTycon  
-//#endif
+#if EXTENSIONTYPING
+       && not tycon.IsProvidedGeneratedTycon  
+#endif
        then
         let tcaug = tycon.TypeContents
         let m = tycon.Range
@@ -2112,28 +2112,28 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
 // Build method calls.
 //------------------------------------------------------------------------- 
 
-//#if EXTENSIONTYPING
-//// This imports a provided method, and checks if it is a known compiler intrinsic like "1 + 2"
-//let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap:Import.ImportMap, m:range, mbase: Tainted<ProvidedMethodBase>) = 
-//    let methodName = mbase.PUntaint((fun x -> x.Name),m)
-//    let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> x.DeclaringType),m))
-//    if isAppTy amap.g declaringType then 
-//        let declaringEntity = tcrefOfAppTy amap.g declaringType
-//        if not declaringEntity.IsLocalRef && ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
-//            match amap.g.knownIntrinsics.TryGetValue ((declaringEntity.LogicalName, methodName)) with 
-//            | true,vref -> Some vref
-//            | _ -> 
-//            match amap.g.knownFSharpCoreModules.TryGetValue(declaringEntity.LogicalName) with
-//            | true,modRef -> 
-//                match modRef.ModuleOrNamespaceType.AllValsByLogicalName |> Seq.tryPick (fun (KeyValue(_,v)) -> if v.CompiledName = methodName then Some v else None) with 
-//                | Some v -> Some (mkNestedValRef modRef v)
-//                | None -> None
-//            | _ -> None
-//        else
-//            None
-//    else
-//        None
-//#endif
+#if EXTENSIONTYPING
+// This imports a provided method, and checks if it is a known compiler intrinsic like "1 + 2"
+let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap:Import.ImportMap, m:range, mbase: Tainted<ProvidedMethodBase>) = 
+    let methodName = mbase.PUntaint((fun x -> x.Name),m)
+    let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> x.DeclaringType),m))
+    if isAppTy amap.g declaringType then 
+        let declaringEntity = tcrefOfAppTy amap.g declaringType
+        if not declaringEntity.IsLocalRef && ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
+            match amap.g.knownIntrinsics.TryGetValue ((declaringEntity.LogicalName, methodName)) with 
+            | true,vref -> Some vref
+            | _ -> 
+            match amap.g.knownFSharpCoreModules.TryGetValue(declaringEntity.LogicalName) with
+            | true,modRef -> 
+                match modRef.ModuleOrNamespaceType.AllValsByLogicalName |> Seq.tryPick (fun (KeyValue(_,v)) -> if v.CompiledName = methodName then Some v else None) with 
+                | Some v -> Some (mkNestedValRef modRef v)
+                | None -> None
+            | _ -> None
+        else
+            None
+    else
+        None
+#endif
         
 
 /// Build an expression that calls a given method info. 
@@ -2162,49 +2162,49 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
                     valUseFlags
 
         match minfo with 
-//#if EXTENSIONTYPING
-//        // By this time this is an erased method info, e.g. one returned from an expression
-//        // REVIEW: copied from tastops, which doesn't allow protected methods
-//        | ProvidedMeth (amap,providedMeth,_,_) -> 
-//            // TODO: there  is a fair bit of duplication here with mk_il_minfo_call. We should be able to merge these
-//                
-//            /// Build an expression node that is a call to a extension method in a generated assembly
-//            let enclTy = minfo.EnclosingType
-//            // prohibit calls to methods that are declared in specific array types (Get,Set,Address)
-//            // these calls are provided by the runtime and should not be called from the user code
-//            if isArrayTy g enclTy then
-//                let tpe = TypeProviderError(FSComp.SR.tcRuntimeSuppliedMethodCannotBeUsedInUserCode(minfo.DisplayName), providedMeth.TypeProviderDesignation, m)
-//                error (tpe)
-//            let valu = isStructTy g enclTy
-//            let isCtor = minfo.IsConstructor
-//            if minfo.IsClassConstructor then 
-//                error (InternalError (minfo.LogicalName ^": cannot call a class constructor",m))
-//            let useCallvirt = not valu && not direct && minfo.IsVirtual
-//            let isProtected = minfo.IsProtectedAccessiblity
-//            let exprTy = if isCtor then enclTy else minfo.GetFSharpReturnTy(amap, m, minst)
-//            match TryImportProvidedMethodBaseAsLibraryIntrinsic (amap, m, providedMeth) with 
-//            | Some fsValRef -> 
-//                //reraise() calls are converted to TOp.Reraise in the type checker. So if a provided expression includes a reraise call
-//                // we must put it in that form here.
-//                if valRefEq amap.g fsValRef amap.g.reraise_vref then
-//                    mkReraise m exprTy, exprTy
-//                else
-//                    let vexp, vexpty = tcVal fsValRef valUseFlags (minfo.DeclaringTypeInst @ minst) m
-//                    BuildFSharpMethodApp g m fsValRef vexp vexpty allArgs
-//            | None -> 
-//                let ilMethRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m providedMeth
-//                let isNewObj = isCtor && (match valUseFlags with NormalValUse -> true | _ -> false)
-//                let actualTypeInst = 
-//                    if isTupleTy g enclTy then argsOfAppTy g (mkCompiledTupleTy g (destTupleTy g enclTy))  // provided expressions can include method calls that get properties of tuple types
-//                    elif isFunTy g enclTy then [ domainOfFunTy g enclTy; rangeOfFunTy g enclTy ]  // provided expressions can call Invoke
-//                    else minfo.DeclaringTypeInst
-//                let actualMethInst = minst
-//                let retTy = (if not isCtor && (ilMethRef.ReturnType = ILType.Void) then [] else [exprTy])
-//                let noTailCall = false
-//                let expr = Expr.Op(TOp.ILCall(useCallvirt,isProtected,valu,isNewObj,valUseFlags,isProp,noTailCall,ilMethRef,actualTypeInst,actualMethInst, retTy),[],allArgs,m)
-//                expr,exprTy
-//
-//#endif
+#if EXTENSIONTYPING
+        // By this time this is an erased method info, e.g. one returned from an expression
+        // REVIEW: copied from tastops, which doesn't allow protected methods
+        | ProvidedMeth (amap,providedMeth,_,_) -> 
+            // TODO: there  is a fair bit of duplication here with mk_il_minfo_call. We should be able to merge these
+                
+            /// Build an expression node that is a call to a extension method in a generated assembly
+            let enclTy = minfo.EnclosingType
+            // prohibit calls to methods that are declared in specific array types (Get,Set,Address)
+            // these calls are provided by the runtime and should not be called from the user code
+            if isArrayTy g enclTy then
+                let tpe = TypeProviderError(FSComp.SR.tcRuntimeSuppliedMethodCannotBeUsedInUserCode(minfo.DisplayName), providedMeth.TypeProviderDesignation, m)
+                error (tpe)
+            let valu = isStructTy g enclTy
+            let isCtor = minfo.IsConstructor
+            if minfo.IsClassConstructor then 
+                error (InternalError (minfo.LogicalName ^": cannot call a class constructor",m))
+            let useCallvirt = not valu && not direct && minfo.IsVirtual
+            let isProtected = minfo.IsProtectedAccessiblity
+            let exprTy = if isCtor then enclTy else minfo.GetFSharpReturnTy(amap, m, minst)
+            match TryImportProvidedMethodBaseAsLibraryIntrinsic (amap, m, providedMeth) with 
+            | Some fsValRef -> 
+                //reraise() calls are converted to TOp.Reraise in the type checker. So if a provided expression includes a reraise call
+                // we must put it in that form here.
+                if valRefEq amap.g fsValRef amap.g.reraise_vref then
+                    mkReraise m exprTy, exprTy
+                else
+                    let vexp, vexpty = tcVal fsValRef valUseFlags (minfo.DeclaringTypeInst @ minst) m
+                    BuildFSharpMethodApp g m fsValRef vexp vexpty allArgs
+            | None -> 
+                let ilMethRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m providedMeth
+                let isNewObj = isCtor && (match valUseFlags with NormalValUse -> true | _ -> false)
+                let actualTypeInst = 
+                    if isTupleTy g enclTy then argsOfAppTy g (mkCompiledTupleTy g (destTupleTy g enclTy))  // provided expressions can include method calls that get properties of tuple types
+                    elif isFunTy g enclTy then [ domainOfFunTy g enclTy; rangeOfFunTy g enclTy ]  // provided expressions can call Invoke
+                    else minfo.DeclaringTypeInst
+                let actualMethInst = minst
+                let retTy = (if not isCtor && (ilMethRef.ReturnType = ILType.Void) then [] else [exprTy])
+                let noTailCall = false
+                let expr = Expr.Op(TOp.ILCall(useCallvirt,isProtected,valu,isNewObj,valUseFlags,isProp,noTailCall,ilMethRef,actualTypeInst,actualMethInst, retTy),[],allArgs,m)
+                expr,exprTy
+
+#endif
             
         // Build a call to a .NET method 
         | ILMeth(_,ilMethInfo,_) -> 
@@ -2280,395 +2280,395 @@ let CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgE
 //------------------------------------------------------------------------- 
 
 
-//#if EXTENSIONTYPING
-//// This file is not a great place for this functionality to sit, it's here because of BuildMethodCall
-//module ProvidedMethodCalls =
-//
-//    let private convertConstExpr g amap m (constant : Tainted<obj * ProvidedType>) =
-//        let (obj,objTy) = constant.PApply2(id,m)
-//        let ty = Import.ImportProvidedType amap m objTy
-//        let normTy = normalizeEnumTy g ty
-//        obj.PUntaint((fun v ->
-//            let fail() = raise <| TypeProviderError(FSComp.SR.etUnsupportedConstantType(v.GetType().ToString()), constant.TypeProviderDesignation, m)
-//            try 
-//                match v with
-//                | null -> mkNull m ty
-//                | _ when typeEquiv g normTy g.bool_ty -> Expr.Const(Const.Bool(v :?> bool), m, ty)
-//                | _ when typeEquiv g normTy g.sbyte_ty -> Expr.Const(Const.SByte(v :?> sbyte), m, ty)
-//                | _ when typeEquiv g normTy g.byte_ty -> Expr.Const(Const.Byte(v :?> byte), m, ty)
-//                | _ when typeEquiv g normTy g.int16_ty -> Expr.Const(Const.Int16(v :?> int16), m, ty)
-//                | _ when typeEquiv g normTy g.uint16_ty -> Expr.Const(Const.UInt16(v :?> uint16), m, ty)
-//                | _ when typeEquiv g normTy g.int32_ty -> Expr.Const(Const.Int32(v :?> int32), m, ty)
-//                | _ when typeEquiv g normTy g.uint32_ty -> Expr.Const(Const.UInt32(v :?> uint32), m, ty)
-//                | _ when typeEquiv g normTy g.int64_ty -> Expr.Const(Const.Int64(v :?> int64), m, ty)
-//                | _ when typeEquiv g normTy g.uint64_ty -> Expr.Const(Const.UInt64(v :?> uint64), m, ty)
-//                | _ when typeEquiv g normTy g.nativeint_ty -> Expr.Const(Const.IntPtr(v :?> int64), m, ty) 
-//                | _ when typeEquiv g normTy g.unativeint_ty -> Expr.Const(Const.UIntPtr(v :?> uint64), m, ty) 
-//                | _ when typeEquiv g normTy g.float32_ty -> Expr.Const(Const.Single(v :?> float32), m, ty)
-//                | _ when typeEquiv g normTy g.float_ty -> Expr.Const(Const.Double(v :?> float), m, ty)
-//                | _ when typeEquiv g normTy g.char_ty -> Expr.Const(Const.Char(v :?> char), m, ty)
-//                | _ when typeEquiv g normTy g.string_ty -> Expr.Const(Const.String(v :?> string), m, ty)
-//                | _ when typeEquiv g normTy g.decimal_ty -> Expr.Const(Const.Decimal(v :?> decimal), m, ty)
-//                | _ when typeEquiv g normTy g.unit_ty -> Expr.Const(Const.Unit, m, ty)
-//                | _ -> fail()
-//             with _ -> 
-//                 fail()
-//            ), range=m)
-//
-//    /// Erasure over System.Type.
-//    ///
-//    /// This is a reimplementation of the logic of provided-type erasure, working entirely over (tainted, provided) System.Type
-//    /// values. This is used when preparing ParameterInfo objects to give to the provider in GetInvokerExpression. 
-//    /// These ParameterInfo have erased ParameterType - giving the provider an erased type makes it considerably easier 
-//    /// to implement a correct GetInvokerExpression.
-//    ///
-//    /// Ideally we would implement this operation by converting to an F# TType using ImportSystemType, and then erasing, and then converting
-//    /// back to System.Type. However, there is currently no way to get from an arbitrary F# TType (even the TType for 
-//    /// System.Object) to a System.Type to give to the type provider.
-//    let eraseSystemType (amap,m,inputType) = 
-//        let rec loop (st:Tainted<ProvidedType>) = 
-//            if st.PUntaint((fun st -> st.IsGenericParameter),m) then st
-//            elif st.PUntaint((fun st -> st.IsArray),m) then 
-//                let et = st.PApply((fun st -> st.GetElementType()),m)
-//                let rank = st.PUntaint((fun st -> st.GetArrayRank()),m)
-//                (loop et).PApply((fun st -> ProvidedType.CreateNoContext(if rank = 1 then st.RawSystemType.MakeArrayType() else st.RawSystemType.MakeArrayType(rank))),m)
-//            elif st.PUntaint((fun st -> st.IsByRef),m) then 
-//                let et = st.PApply((fun st -> st.GetElementType()),m)
-//                (loop et).PApply((fun st -> ProvidedType.CreateNoContext(st.RawSystemType.MakeByRefType())),m)
-//            elif st.PUntaint((fun st -> st.IsPointer),m) then 
-//                let et = st.PApply((fun st -> st.GetElementType()),m)
-//                (loop et).PApply((fun st -> ProvidedType.CreateNoContext(st.RawSystemType.MakePointerType())),m)
-//            else
-//                let isGeneric = st.PUntaint((fun st -> st.IsGenericType),m)
-//                let headType = if isGeneric then st.PApply((fun st -> st.GetGenericTypeDefinition()),m) else st
-//                // We import in order to use IsProvidedErasedTycon, to make sure we at least don't reinvent that 
-//                let headTypeAsFSharpType = Import.ImportProvidedNamedType amap m headType
-//                if headTypeAsFSharpType.IsProvidedErasedTycon then 
-//                    let baseType = 
-//                        st.PApply((fun st -> 
-//                            match st.BaseType with 
-//                            | null -> ProvidedType.CreateNoContext(typeof<obj>)  // it might be an interface
-//                            | st -> st),m)
-//                    loop baseType
-//                else
-//                    if isGeneric then 
-//                        let genericArgs = st.PApplyArray((fun st -> st.GetGenericArguments()),"GetGenericArguments",m) 
-//                        let typars = headTypeAsFSharpType.Typars(m)
-//                        // Drop the generic arguments that don't correspond to type arguments, i.e. are units-of-measure
-//                        let genericArgs = 
-//                            [| for (genericArg,tp) in Seq.zip genericArgs typars do
-//                                   if tp.Kind = TyparKind.Type then 
-//                                       yield genericArg |]
-//
-//                        if genericArgs.Length = 0 then 
-//                            headType
-//                        else
-//                            let erasedArgTys = genericArgs |> Array.map loop
-//                            headType.PApply((fun st -> 
-//                                let erasedArgTys = erasedArgTys |> Array.map (fun a -> a.PUntaintNoFailure (fun x -> x.RawSystemType))
-//                                ProvidedType.CreateNoContext(st.RawSystemType.MakeGenericType erasedArgTys)),m)
-//                    else   
-//                        st
-//        loop inputType
-//
-//    let convertProvidedExpressionToExprAndWitness tcVal (thisArg:Expr option,
-//                                                         allArgs:Exprs,
-//                                                         paramVars:Tainted<ProvidedVar>[],
-//                                                         g,amap,mut,isProp,isSuperInit,m,
-//                                                         expr:Tainted<ProvidedExpr>) = 
-//        let varConv = 
-//            [ for (v,e) in Seq.zip (paramVars |> Seq.map (fun x -> x.PUntaint(id,m))) (Option.toList thisArg @ allArgs) do
-//                 yield (v,(None,e)) ]
-//            |> Dictionary.ofList 
-//
-//        let rec exprToExprAndWitness top (ea:Tainted<ProvidedExpr>) =
-//            let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> etree.UnderlyingExpressionString), m)),m))
-//            match ea with
-//            | Tainted.Null -> error(Error(FSComp.SR.etNullProvidedExpression(ea.TypeProviderDesignation),m))
-//            |  _ ->
-//            match ea.PApplyOption((function ProvidedTypeAsExpr x -> Some x | _ -> None), m) with
-//            | Some info -> 
-//                let (expr,targetTy) = info.PApply2(id,m)
-//                let srcExpr = exprToExpr expr
-//                let targetTy = Import.ImportProvidedType amap m (targetTy.PApply(id,m)) 
-//                let sourceTy = Import.ImportProvidedType amap m (expr.PApply((fun e -> e.Type),m)) 
-//                let te = mkCoerceIfNeeded g targetTy sourceTy srcExpr
-//                None, (te, tyOfExpr g te)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedTypeTestExpr x -> Some x | _ -> None), m) with
-//            | Some info -> 
-//                let (expr,targetTy) = info.PApply2(id,m)
-//                let srcExpr = exprToExpr expr
-//                let targetTy = Import.ImportProvidedType amap m (targetTy.PApply(id,m)) 
-//                let te = mkCallTypeTest g m targetTy srcExpr
-//                None, (te, tyOfExpr g te)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedIfThenElseExpr x -> Some x | _ -> None), m) with
-//            | Some info -> 
-//                let test,thenBranch,elseBranch = info.PApply3(id,m)
-//                let testExpr = exprToExpr test
-//                let ifTrueExpr = exprToExpr thenBranch
-//                let ifFalseExpr = exprToExpr elseBranch
-//                let te = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
-//                None, (te, tyOfExpr g te)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedVarExpr x -> Some x | _ -> None), m) with
-//            | Some info ->  
-//                let _,vTe = varToExpr info
-//                None, (vTe, tyOfExpr g vTe)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedConstantExpr x -> Some x | _ -> None), m) with
-//            | Some info -> 
-//                let ce = convertConstExpr g amap m info
-//                None, (ce, tyOfExpr g ce)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedNewTupleExpr x -> Some x | _ -> None), m) with
-//            | Some info -> 
-//                let elems = info.PApplyArray(id, "GetInvokerExpresson",m)
-//                let elemsT = elems |> Array.map exprToExpr |> Array.toList
-//                let exprT = mkTupledNoTypes g m elemsT
-//                None, (exprT, tyOfExpr g exprT)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedNewArrayExpr x -> Some x | _ -> None), m) with
-//            | Some info -> 
-//                let ty,elems = info.PApply2(id,m)
-//                let tyT = Import.ImportProvidedType amap m ty
-//                let elems = elems.PApplyArray(id, "GetInvokerExpresson",m)
-//                let elemsT = elems |> Array.map exprToExpr |> Array.toList
-//                let exprT = Expr.Op(TOp.Array, [tyT],elemsT,m)
-//                None, (exprT, tyOfExpr g exprT)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedTupleGetExpr x -> Some x | _ -> None), m) with
-//            | Some info -> 
-//                let inp,n = info.PApply2(id, m)
-//                let inpT = inp |> exprToExpr 
-//                // if type of expression is erased type then we need convert it to the underlying base type
-//                let typeOfExpr = 
-//                    let t = tyOfExpr g inpT
-//                    stripTyEqnsWrtErasure EraseMeasures g t
-//                let tysT = tryDestTupleTy g typeOfExpr
-//                let exprT = mkTupleFieldGet (inpT, tysT, n.PUntaint(id,m), m)
-//                None, (exprT, tyOfExpr g exprT)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedLambdaExpr x -> Some x | _ -> None), m) with
-//            | Some info -> 
-//                let v,b = info.PApply2(id, m)
-//                let vT = addVar v
-//                let bT = exprToExpr b
-//                removeVar v
-//                let exprT = mkLambda m vT (bT, tyOfExpr g bT)
-//                None, (exprT, tyOfExpr g exprT)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedLetExpr x -> Some x | _ -> None), m) with
-//            | Some info -> 
-//                let v,e,b = info.PApply3(id, m)
-//                let eT = exprToExpr  e
-//                let vT = addVar v
-//                let bT = exprToExpr  b
-//                removeVar v
-//                let exprT = mkCompGenLet m vT eT bT
-//                None, (exprT, tyOfExpr g exprT)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedVarSetExpr x -> Some x | _ -> None), m) with
-//            | Some info -> 
-//                let v,e = info.PApply2(id, m)
-//                let eT = exprToExpr  e
-//                let vTopt,_ = varToExpr v
-//                match vTopt with 
-//                | None -> 
-//                    fail()
-//                | Some vT -> 
-//                    let exprT = mkValSet m (mkLocalValRef vT) eT 
-//                    None, (exprT, tyOfExpr g exprT)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedWhileLoopExpr x -> Some x | _ -> None), m) with
-//            | Some info -> 
-//                let guardExpr,bodyExpr = info.PApply2(id, m)
-//                let guardExprT = exprToExpr guardExpr
-//                let bodyExprT = exprToExpr bodyExpr
-//                let exprT = mkWhile g (SequencePointInfoForWhileLoop.NoSequencePointAtWhileLoop,SpecialWhileLoopMarker.NoSpecialWhileLoopMarker, guardExprT, bodyExprT, m)
-//                None, (exprT, tyOfExpr g exprT)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedForIntegerRangeLoopExpr x -> Some x | _ -> None), m) with
-//            | Some info -> 
-//                let v,e1,e2,e3 = info.PApply4(id, m)
-//                let e1T = exprToExpr  e1
-//                let e2T = exprToExpr  e2
-//                let vT = addVar v
-//                let e3T = exprToExpr  e3
-//                removeVar v
-//                let exprT = mkFastForLoop g (SequencePointInfoForForLoop.NoSequencePointAtForLoop,m,vT,e1T,true,e2T,e3T)
-//                None, (exprT, tyOfExpr g exprT)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedNewDelegateExpr x -> Some x | _ -> None), m) with
-//            | Some info -> 
-//                let delegateTy,boundVars,delegateBodyExpr = info.PApply3(id, m)
-//                let delegateTyT = Import.ImportProvidedType amap m delegateTy
-//                let vs = boundVars.PApplyArray(id, "GetInvokerExpresson",m) |> Array.toList 
-//                let vsT = List.map addVar vs
-//                let delegateBodyExprT = exprToExpr delegateBodyExpr
-//                List.iter removeVar vs
-//                let lambdaExpr = mkLambdas m [] vsT (delegateBodyExprT, tyOfExpr g delegateBodyExprT)
-//                let lambdaExprTy = tyOfExpr g lambdaExpr
-//                let infoReader = InfoReader(g, amap)
-//                let exprT = CoerceFromFSharpFuncToDelegate g amap infoReader AccessorDomain.AccessibleFromSomewhere lambdaExprTy m lambdaExpr delegateTyT
-//                None, (exprT, tyOfExpr g exprT)
-//            | None -> 
-//#if PROVIDED_ADDRESS_OF
-//            match ea.PApplyOption((function ProvidedAddressOfExpr x -> Some x | _ -> None), m) with
-//            | Some e -> 
-//                let eT =  exprToExpr e
-//                let wrap,ce = mkExprAddrOfExpr g true false DefinitelyMutates eT None m
-//                let ce = wrap ce
-//                None, (ce, tyOfExpr g ce)
-//            | None -> 
-//#endif
-//            match ea.PApplyOption((function ProvidedDefaultExpr x -> Some x | _ -> None), m) with
-//            | Some pty -> 
-//                let ty = Import.ImportProvidedType amap m pty
-//                let ce = mkDefault (m, ty)
-//                None, (ce, tyOfExpr g ce)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedCallExpr c -> Some c | _ -> None), m) with 
-//            | Some info ->
-//                methodCallToExpr top ea info
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedSequentialExpr c -> Some c | _ -> None), m) with 
-//            | Some info ->
-//                let e1,e2 = info.PApply2(id, m)
-//                let e1T = exprToExpr e1
-//                let e2T = exprToExpr e2
-//                let ce = mkCompGenSequential m e1T e2T
-//                None, (ce, tyOfExpr g ce)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedTryFinallyExpr c -> Some c | _ -> None), m) with 
-//            | Some info ->
-//                let e1,e2 = info.PApply2(id, m)
-//                let e1T = exprToExpr e1
-//                let e2T = exprToExpr e2
-//                let ce = mkTryFinally g (e1T,e2T,m,tyOfExpr g e1T,SequencePointInfoForTry.NoSequencePointAtTry,SequencePointInfoForFinally.NoSequencePointAtFinally)
-//                None, (ce, tyOfExpr g ce)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedTryWithExpr c -> Some c | _ -> None), m) with 
-//            | Some info ->
-//                let bT = exprToExpr (info.PApply((fun (x,_,_,_,_) -> x), m))
-//                let v1 = info.PApply((fun (_,x,_,_,_) -> x), m)
-//                let v1T = addVar v1
-//                let e1T = exprToExpr (info.PApply((fun (_,_,x,_,_) -> x), m))
-//                removeVar v1
-//                let v2 = info.PApply((fun (_,_,_,x,_) -> x), m)
-//                let v2T = addVar v2
-//                let e2T = exprToExpr (info.PApply((fun (_,_,_,_,x) -> x), m))
-//                removeVar v2
-//                let ce = mkTryWith g (bT,v1T,e1T,v2T,e2T,m,tyOfExpr g bT,SequencePointInfoForTry.NoSequencePointAtTry,SequencePointInfoForWith.NoSequencePointAtWith)
-//                None, (ce, tyOfExpr g ce)
-//            | None -> 
-//            match ea.PApplyOption((function ProvidedNewObjectExpr c -> Some c | _ -> None), m) with 
-//            | Some info -> 
-//                None, ctorCallToExpr info
-//            | None -> 
-//                fail()
-//
-//
-//        and ctorCallToExpr (ne:Tainted<_>) =    
-//            let (ctor,args) = ne.PApply2(id,m)
-//            let targetMethInfo = ProvidedMeth(amap,ctor.PApply((fun ne -> upcast ne),m),None,m)
-//            let objArgs = [] 
-//            let arguments = [ for ea in args.PApplyArray(id, "GetInvokerExpresson", m) -> exprToExpr ea ]
-//            let callExpr = BuildMethodCall tcVal g amap Mutates.PossiblyMutates m false targetMethInfo isSuperInit [] objArgs arguments
-//            callExpr
-//
-//        and addVar (v:Tainted<ProvidedVar>) =    
-//            let nm = v.PUntaint ((fun v -> v.Name),m)
-//            let mut = v.PUntaint ((fun v -> v.IsMutable),m)
-//            let vRaw = v.PUntaint (id,m)
-//            let tyT = Import.ImportProvidedType amap m (v.PApply ((fun v -> v.Type),m))
-//            let vT,vTe = if mut then mkMutableCompGenLocal m nm tyT else mkCompGenLocal m nm tyT
-//            varConv.[vRaw] <- (Some vT,vTe)
-//            vT
-//
-//        and removeVar (v:Tainted<ProvidedVar>) =    
-//            let vRaw = v.PUntaint (id,m)
-//            varConv.Remove vRaw |> ignore
-//
-//        and methodCallToExpr top _origExpr (mce:Tainted<_>) =    
-//            let (objOpt,meth,args) = mce.PApply3(id,m)
-//            let targetMethInfo = ProvidedMeth(amap,meth.PApply((fun mce -> upcast mce), m),None,m)
-//            let objArgs = 
-//                match objOpt.PApplyOption(id, m) with
-//                | None -> []
-//                | Some objExpr -> [exprToExpr objExpr]
-//
-//            let arguments = [ for ea in args.PApplyArray(id, "GetInvokerExpresson", m) -> exprToExpr ea ]
-//            let genericArguments = 
-//                if meth.PUntaint((fun m -> m.IsGenericMethod), m) then 
-//                    meth.PApplyArray((fun m -> m.GetGenericArguments()), "GetGenericArguments", m)  
-//                else 
-//                    [| |]
-//            let replacementGenericArguments = genericArguments |> Array.map (fun t->Import.ImportProvidedType amap m t) |> List.ofArray
-//
-//            let mut         = if top then mut else PossiblyMutates
-//            let isSuperInit = if top then isSuperInit else ValUseFlag.NormalValUse
-//            let isProp      = if top then isProp else false
-//            let callExpr = BuildMethodCall tcVal g amap mut m isProp targetMethInfo isSuperInit replacementGenericArguments objArgs arguments
-//            Some meth, callExpr
-//
-//        and varToExpr (pe:Tainted<ProvidedVar>) =    
-//            // sub in the appropriate argument
-//            // REVIEW: "thisArg" pointer should be first, if present
-//            let vRaw = pe.PUntaint(id,m)
-//            if not (varConv.ContainsKey vRaw) then
-//                        let typeProviderDesignation = ExtensionTyping.DisplayNameOfTypeProvider (pe.TypeProvider, m)
-//                        error(NumberedError(FSComp.SR.etIncorrectParameterExpression(typeProviderDesignation,vRaw.Name), m))
-//            varConv.[vRaw]
-//                
-//        and exprToExpr expr =
-//            let _, (resExpr, _) = exprToExprAndWitness false expr
-//            resExpr
-//
-//        exprToExprAndWitness true expr
-//
-//        
-//    // fill in parameter holes in the expression   
-//    let TranslateInvokerExpressionForProvidedMethodCall tcVal (g, amap, mut, isProp, isSuperInit, mi:Tainted<ProvidedMethodBase>, objArgs, allArgs, m) =        
-//        let parameters = 
-//            mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m)
-//        let paramTys = 
-//            parameters
-//            |> Array.map (fun p -> p.PApply((fun st -> st.ParameterType),m))
-//        let erasedParamTys = 
-//            paramTys
-//            |> Array.map (fun pty -> eraseSystemType (amap,m,pty))
-//        let paramVars = 
-//            erasedParamTys
-//            |> Array.mapi (fun i erasedParamTy -> erasedParamTy.PApply((fun ty ->  ProvidedVar.Fresh("arg" + i.ToString(),ty)),m))
-//
-//
-//        // encode "this" as the first ParameterExpression, if applicable
-//        let thisArg, paramVars = 
-//            match objArgs with
-//            | [objArg] -> 
-//                let erasedThisTy = eraseSystemType (amap,m,mi.PApply((fun mi -> mi.DeclaringType),m))
-//                let thisVar = erasedThisTy.PApply((fun ty -> ProvidedVar.Fresh("this", ty)), m)
-//                Some objArg , Array.append [| thisVar |] paramVars
-//            | [] -> None , paramVars
-//            | _ -> failwith "multiple objArgs?"
-//            
-//        let ea = mi.PApplyWithProvider((fun (methodInfo,provider) -> ExtensionTyping.GetInvokerExpression(provider, methodInfo, [| for p in paramVars -> p.PUntaintNoFailure id |])), m)
-//
-//        convertProvidedExpressionToExprAndWitness tcVal (thisArg,allArgs,paramVars,g,amap,mut,isProp,isSuperInit,m,ea)
-//
-//            
-//    let BuildInvokerExpressionForProvidedMethodCall tcVal (g, amap, mi:Tainted<ProvidedMethodBase>, objArgs, mut, isProp, isSuperInit, allArgs, m) =
-//        try                   
-//            let methInfoOpt, (expr, retTy) = TranslateInvokerExpressionForProvidedMethodCall tcVal (g, amap, mut, isProp, isSuperInit, mi, objArgs, allArgs, m)
-//
-//            let exprty = GetCompiledReturnTyOfProvidedMethodInfo amap m mi |> GetFSharpViewOfReturnType g
-//            let expr = mkCoerceIfNeeded g exprty retTy expr
-//            methInfoOpt, expr, exprty
-//        with
-//            | :? TypeProviderError as tpe ->
-//                let typeName = mi.PUntaint((fun mb -> mb.DeclaringType.FullName), m)
-//                let methName = mi.PUntaint((fun mb -> mb.Name), m)
-//                raise( tpe.WithContext(typeName, methName) )  // loses original stack trace
-//#endif
+#if EXTENSIONTYPING
+// This file is not a great place for this functionality to sit, it's here because of BuildMethodCall
+module ProvidedMethodCalls =
+
+    let private convertConstExpr g amap m (constant : Tainted<obj * ProvidedType>) =
+        let (obj,objTy) = constant.PApply2(id,m)
+        let ty = Import.ImportProvidedType amap m objTy
+        let normTy = normalizeEnumTy g ty
+        obj.PUntaint((fun v ->
+            let fail() = raise <| TypeProviderError(FSComp.SR.etUnsupportedConstantType(v.GetType().ToString()), constant.TypeProviderDesignation, m)
+            try 
+                match v with
+                | null -> mkNull m ty
+                | _ when typeEquiv g normTy g.bool_ty -> Expr.Const(Const.Bool(v :?> bool), m, ty)
+                | _ when typeEquiv g normTy g.sbyte_ty -> Expr.Const(Const.SByte(v :?> sbyte), m, ty)
+                | _ when typeEquiv g normTy g.byte_ty -> Expr.Const(Const.Byte(v :?> byte), m, ty)
+                | _ when typeEquiv g normTy g.int16_ty -> Expr.Const(Const.Int16(v :?> int16), m, ty)
+                | _ when typeEquiv g normTy g.uint16_ty -> Expr.Const(Const.UInt16(v :?> uint16), m, ty)
+                | _ when typeEquiv g normTy g.int32_ty -> Expr.Const(Const.Int32(v :?> int32), m, ty)
+                | _ when typeEquiv g normTy g.uint32_ty -> Expr.Const(Const.UInt32(v :?> uint32), m, ty)
+                | _ when typeEquiv g normTy g.int64_ty -> Expr.Const(Const.Int64(v :?> int64), m, ty)
+                | _ when typeEquiv g normTy g.uint64_ty -> Expr.Const(Const.UInt64(v :?> uint64), m, ty)
+                | _ when typeEquiv g normTy g.nativeint_ty -> Expr.Const(Const.IntPtr(v :?> int64), m, ty) 
+                | _ when typeEquiv g normTy g.unativeint_ty -> Expr.Const(Const.UIntPtr(v :?> uint64), m, ty) 
+                | _ when typeEquiv g normTy g.float32_ty -> Expr.Const(Const.Single(v :?> float32), m, ty)
+                | _ when typeEquiv g normTy g.float_ty -> Expr.Const(Const.Double(v :?> float), m, ty)
+                | _ when typeEquiv g normTy g.char_ty -> Expr.Const(Const.Char(v :?> char), m, ty)
+                | _ when typeEquiv g normTy g.string_ty -> Expr.Const(Const.String(v :?> string), m, ty)
+                | _ when typeEquiv g normTy g.decimal_ty -> Expr.Const(Const.Decimal(v :?> decimal), m, ty)
+                | _ when typeEquiv g normTy g.unit_ty -> Expr.Const(Const.Unit, m, ty)
+                | _ -> fail()
+             with _ -> 
+                 fail()
+            ), range=m)
+
+    /// Erasure over System.Type.
+    ///
+    /// This is a reimplementation of the logic of provided-type erasure, working entirely over (tainted, provided) System.Type
+    /// values. This is used when preparing ParameterInfo objects to give to the provider in GetInvokerExpression. 
+    /// These ParameterInfo have erased ParameterType - giving the provider an erased type makes it considerably easier 
+    /// to implement a correct GetInvokerExpression.
+    ///
+    /// Ideally we would implement this operation by converting to an F# TType using ImportSystemType, and then erasing, and then converting
+    /// back to System.Type. However, there is currently no way to get from an arbitrary F# TType (even the TType for 
+    /// System.Object) to a System.Type to give to the type provider.
+    let eraseSystemType (amap,m,inputType) = 
+        let rec loop (st:Tainted<ProvidedType>) = 
+            if st.PUntaint((fun st -> st.IsGenericParameter),m) then st
+            elif st.PUntaint((fun st -> st.IsArray),m) then 
+                let et = st.PApply((fun st -> st.GetElementType()),m)
+                let rank = st.PUntaint((fun st -> st.GetArrayRank()),m)
+                (loop et).PApply((fun st -> ProvidedType.CreateNoContext(if rank = 1 then st.RawSystemType.MakeArrayType() else st.RawSystemType.MakeArrayType(rank))),m)
+            elif st.PUntaint((fun st -> st.IsByRef),m) then 
+                let et = st.PApply((fun st -> st.GetElementType()),m)
+                (loop et).PApply((fun st -> ProvidedType.CreateNoContext(st.RawSystemType.MakeByRefType())),m)
+            elif st.PUntaint((fun st -> st.IsPointer),m) then 
+                let et = st.PApply((fun st -> st.GetElementType()),m)
+                (loop et).PApply((fun st -> ProvidedType.CreateNoContext(st.RawSystemType.MakePointerType())),m)
+            else
+                let isGeneric = st.PUntaint((fun st -> st.IsGenericType),m)
+                let headType = if isGeneric then st.PApply((fun st -> st.GetGenericTypeDefinition()),m) else st
+                // We import in order to use IsProvidedErasedTycon, to make sure we at least don't reinvent that 
+                let headTypeAsFSharpType = Import.ImportProvidedNamedType amap m headType
+                if headTypeAsFSharpType.IsProvidedErasedTycon then 
+                    let baseType = 
+                        st.PApply((fun st -> 
+                            match st.BaseType with 
+                            | null -> ProvidedType.CreateNoContext(typeof<obj>)  // it might be an interface
+                            | st -> st),m)
+                    loop baseType
+                else
+                    if isGeneric then 
+                        let genericArgs = st.PApplyArray((fun st -> st.GetGenericArguments()),"GetGenericArguments",m) 
+                        let typars = headTypeAsFSharpType.Typars(m)
+                        // Drop the generic arguments that don't correspond to type arguments, i.e. are units-of-measure
+                        let genericArgs = 
+                            [| for (genericArg,tp) in Seq.zip genericArgs typars do
+                                   if tp.Kind = TyparKind.Type then 
+                                       yield genericArg |]
+
+                        if genericArgs.Length = 0 then 
+                            headType
+                        else
+                            let erasedArgTys = genericArgs |> Array.map loop
+                            headType.PApply((fun st -> 
+                                let erasedArgTys = erasedArgTys |> Array.map (fun a -> a.PUntaintNoFailure (fun x -> x.RawSystemType))
+                                ProvidedType.CreateNoContext(st.RawSystemType.MakeGenericType erasedArgTys)),m)
+                    else   
+                        st
+        loop inputType
+
+    let convertProvidedExpressionToExprAndWitness tcVal (thisArg:Expr option,
+                                                         allArgs:Exprs,
+                                                         paramVars:Tainted<ProvidedVar>[],
+                                                         g,amap,mut,isProp,isSuperInit,m,
+                                                         expr:Tainted<ProvidedExpr>) = 
+        let varConv = 
+            [ for (v,e) in Seq.zip (paramVars |> Seq.map (fun x -> x.PUntaint(id,m))) (Option.toList thisArg @ allArgs) do
+                 yield (v,(None,e)) ]
+            |> Dictionary.ofList 
+
+        let rec exprToExprAndWitness top (ea:Tainted<ProvidedExpr>) =
+            let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> etree.UnderlyingExpressionString), m)),m))
+            match ea with
+            | Tainted.Null -> error(Error(FSComp.SR.etNullProvidedExpression(ea.TypeProviderDesignation),m))
+            |  _ ->
+            match ea.PApplyOption((function ProvidedTypeAsExpr x -> Some x | _ -> None), m) with
+            | Some info -> 
+                let (expr,targetTy) = info.PApply2(id,m)
+                let srcExpr = exprToExpr expr
+                let targetTy = Import.ImportProvidedType amap m (targetTy.PApply(id,m)) 
+                let sourceTy = Import.ImportProvidedType amap m (expr.PApply((fun e -> e.Type),m)) 
+                let te = mkCoerceIfNeeded g targetTy sourceTy srcExpr
+                None, (te, tyOfExpr g te)
+            | None -> 
+            match ea.PApplyOption((function ProvidedTypeTestExpr x -> Some x | _ -> None), m) with
+            | Some info -> 
+                let (expr,targetTy) = info.PApply2(id,m)
+                let srcExpr = exprToExpr expr
+                let targetTy = Import.ImportProvidedType amap m (targetTy.PApply(id,m)) 
+                let te = mkCallTypeTest g m targetTy srcExpr
+                None, (te, tyOfExpr g te)
+            | None -> 
+            match ea.PApplyOption((function ProvidedIfThenElseExpr x -> Some x | _ -> None), m) with
+            | Some info -> 
+                let test,thenBranch,elseBranch = info.PApply3(id,m)
+                let testExpr = exprToExpr test
+                let ifTrueExpr = exprToExpr thenBranch
+                let ifFalseExpr = exprToExpr elseBranch
+                let te = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
+                None, (te, tyOfExpr g te)
+            | None -> 
+            match ea.PApplyOption((function ProvidedVarExpr x -> Some x | _ -> None), m) with
+            | Some info ->  
+                let _,vTe = varToExpr info
+                None, (vTe, tyOfExpr g vTe)
+            | None -> 
+            match ea.PApplyOption((function ProvidedConstantExpr x -> Some x | _ -> None), m) with
+            | Some info -> 
+                let ce = convertConstExpr g amap m info
+                None, (ce, tyOfExpr g ce)
+            | None -> 
+            match ea.PApplyOption((function ProvidedNewTupleExpr x -> Some x | _ -> None), m) with
+            | Some info -> 
+                let elems = info.PApplyArray(id, "GetInvokerExpresson",m)
+                let elemsT = elems |> Array.map exprToExpr |> Array.toList
+                let exprT = mkTupledNoTypes g m elemsT
+                None, (exprT, tyOfExpr g exprT)
+            | None -> 
+            match ea.PApplyOption((function ProvidedNewArrayExpr x -> Some x | _ -> None), m) with
+            | Some info -> 
+                let ty,elems = info.PApply2(id,m)
+                let tyT = Import.ImportProvidedType amap m ty
+                let elems = elems.PApplyArray(id, "GetInvokerExpresson",m)
+                let elemsT = elems |> Array.map exprToExpr |> Array.toList
+                let exprT = Expr.Op(TOp.Array, [tyT],elemsT,m)
+                None, (exprT, tyOfExpr g exprT)
+            | None -> 
+            match ea.PApplyOption((function ProvidedTupleGetExpr x -> Some x | _ -> None), m) with
+            | Some info -> 
+                let inp,n = info.PApply2(id, m)
+                let inpT = inp |> exprToExpr 
+                // if type of expression is erased type then we need convert it to the underlying base type
+                let typeOfExpr = 
+                    let t = tyOfExpr g inpT
+                    stripTyEqnsWrtErasure EraseMeasures g t
+                let tysT = tryDestTupleTy g typeOfExpr
+                let exprT = mkTupleFieldGet (inpT, tysT, n.PUntaint(id,m), m)
+                None, (exprT, tyOfExpr g exprT)
+            | None -> 
+            match ea.PApplyOption((function ProvidedLambdaExpr x -> Some x | _ -> None), m) with
+            | Some info -> 
+                let v,b = info.PApply2(id, m)
+                let vT = addVar v
+                let bT = exprToExpr b
+                removeVar v
+                let exprT = mkLambda m vT (bT, tyOfExpr g bT)
+                None, (exprT, tyOfExpr g exprT)
+            | None -> 
+            match ea.PApplyOption((function ProvidedLetExpr x -> Some x | _ -> None), m) with
+            | Some info -> 
+                let v,e,b = info.PApply3(id, m)
+                let eT = exprToExpr  e
+                let vT = addVar v
+                let bT = exprToExpr  b
+                removeVar v
+                let exprT = mkCompGenLet m vT eT bT
+                None, (exprT, tyOfExpr g exprT)
+            | None -> 
+            match ea.PApplyOption((function ProvidedVarSetExpr x -> Some x | _ -> None), m) with
+            | Some info -> 
+                let v,e = info.PApply2(id, m)
+                let eT = exprToExpr  e
+                let vTopt,_ = varToExpr v
+                match vTopt with 
+                | None -> 
+                    fail()
+                | Some vT -> 
+                    let exprT = mkValSet m (mkLocalValRef vT) eT 
+                    None, (exprT, tyOfExpr g exprT)
+            | None -> 
+            match ea.PApplyOption((function ProvidedWhileLoopExpr x -> Some x | _ -> None), m) with
+            | Some info -> 
+                let guardExpr,bodyExpr = info.PApply2(id, m)
+                let guardExprT = exprToExpr guardExpr
+                let bodyExprT = exprToExpr bodyExpr
+                let exprT = mkWhile g (SequencePointInfoForWhileLoop.NoSequencePointAtWhileLoop,SpecialWhileLoopMarker.NoSpecialWhileLoopMarker, guardExprT, bodyExprT, m)
+                None, (exprT, tyOfExpr g exprT)
+            | None -> 
+            match ea.PApplyOption((function ProvidedForIntegerRangeLoopExpr x -> Some x | _ -> None), m) with
+            | Some info -> 
+                let v,e1,e2,e3 = info.PApply4(id, m)
+                let e1T = exprToExpr  e1
+                let e2T = exprToExpr  e2
+                let vT = addVar v
+                let e3T = exprToExpr  e3
+                removeVar v
+                let exprT = mkFastForLoop g (SequencePointInfoForForLoop.NoSequencePointAtForLoop,m,vT,e1T,true,e2T,e3T)
+                None, (exprT, tyOfExpr g exprT)
+            | None -> 
+            match ea.PApplyOption((function ProvidedNewDelegateExpr x -> Some x | _ -> None), m) with
+            | Some info -> 
+                let delegateTy,boundVars,delegateBodyExpr = info.PApply3(id, m)
+                let delegateTyT = Import.ImportProvidedType amap m delegateTy
+                let vs = boundVars.PApplyArray(id, "GetInvokerExpresson",m) |> Array.toList 
+                let vsT = List.map addVar vs
+                let delegateBodyExprT = exprToExpr delegateBodyExpr
+                List.iter removeVar vs
+                let lambdaExpr = mkLambdas m [] vsT (delegateBodyExprT, tyOfExpr g delegateBodyExprT)
+                let lambdaExprTy = tyOfExpr g lambdaExpr
+                let infoReader = InfoReader(g, amap)
+                let exprT = CoerceFromFSharpFuncToDelegate g amap infoReader AccessorDomain.AccessibleFromSomewhere lambdaExprTy m lambdaExpr delegateTyT
+                None, (exprT, tyOfExpr g exprT)
+            | None -> 
+#if PROVIDED_ADDRESS_OF
+            match ea.PApplyOption((function ProvidedAddressOfExpr x -> Some x | _ -> None), m) with
+            | Some e -> 
+                let eT =  exprToExpr e
+                let wrap,ce = mkExprAddrOfExpr g true false DefinitelyMutates eT None m
+                let ce = wrap ce
+                None, (ce, tyOfExpr g ce)
+            | None -> 
+#endif
+            match ea.PApplyOption((function ProvidedDefaultExpr x -> Some x | _ -> None), m) with
+            | Some pty -> 
+                let ty = Import.ImportProvidedType amap m pty
+                let ce = mkDefault (m, ty)
+                None, (ce, tyOfExpr g ce)
+            | None -> 
+            match ea.PApplyOption((function ProvidedCallExpr c -> Some c | _ -> None), m) with 
+            | Some info ->
+                methodCallToExpr top ea info
+            | None -> 
+            match ea.PApplyOption((function ProvidedSequentialExpr c -> Some c | _ -> None), m) with 
+            | Some info ->
+                let e1,e2 = info.PApply2(id, m)
+                let e1T = exprToExpr e1
+                let e2T = exprToExpr e2
+                let ce = mkCompGenSequential m e1T e2T
+                None, (ce, tyOfExpr g ce)
+            | None -> 
+            match ea.PApplyOption((function ProvidedTryFinallyExpr c -> Some c | _ -> None), m) with 
+            | Some info ->
+                let e1,e2 = info.PApply2(id, m)
+                let e1T = exprToExpr e1
+                let e2T = exprToExpr e2
+                let ce = mkTryFinally g (e1T,e2T,m,tyOfExpr g e1T,SequencePointInfoForTry.NoSequencePointAtTry,SequencePointInfoForFinally.NoSequencePointAtFinally)
+                None, (ce, tyOfExpr g ce)
+            | None -> 
+            match ea.PApplyOption((function ProvidedTryWithExpr c -> Some c | _ -> None), m) with 
+            | Some info ->
+                let bT = exprToExpr (info.PApply((fun (x,_,_,_,_) -> x), m))
+                let v1 = info.PApply((fun (_,x,_,_,_) -> x), m)
+                let v1T = addVar v1
+                let e1T = exprToExpr (info.PApply((fun (_,_,x,_,_) -> x), m))
+                removeVar v1
+                let v2 = info.PApply((fun (_,_,_,x,_) -> x), m)
+                let v2T = addVar v2
+                let e2T = exprToExpr (info.PApply((fun (_,_,_,_,x) -> x), m))
+                removeVar v2
+                let ce = mkTryWith g (bT,v1T,e1T,v2T,e2T,m,tyOfExpr g bT,SequencePointInfoForTry.NoSequencePointAtTry,SequencePointInfoForWith.NoSequencePointAtWith)
+                None, (ce, tyOfExpr g ce)
+            | None -> 
+            match ea.PApplyOption((function ProvidedNewObjectExpr c -> Some c | _ -> None), m) with 
+            | Some info -> 
+                None, ctorCallToExpr info
+            | None -> 
+                fail()
+
+
+        and ctorCallToExpr (ne:Tainted<_>) =    
+            let (ctor,args) = ne.PApply2(id,m)
+            let targetMethInfo = ProvidedMeth(amap,ctor.PApply((fun ne -> upcast ne),m),None,m)
+            let objArgs = [] 
+            let arguments = [ for ea in args.PApplyArray(id, "GetInvokerExpresson", m) -> exprToExpr ea ]
+            let callExpr = BuildMethodCall tcVal g amap Mutates.PossiblyMutates m false targetMethInfo isSuperInit [] objArgs arguments
+            callExpr
+
+        and addVar (v:Tainted<ProvidedVar>) =    
+            let nm = v.PUntaint ((fun v -> v.Name),m)
+            let mut = v.PUntaint ((fun v -> v.IsMutable),m)
+            let vRaw = v.PUntaint (id,m)
+            let tyT = Import.ImportProvidedType amap m (v.PApply ((fun v -> v.Type),m))
+            let vT,vTe = if mut then mkMutableCompGenLocal m nm tyT else mkCompGenLocal m nm tyT
+            varConv.[vRaw] <- (Some vT,vTe)
+            vT
+
+        and removeVar (v:Tainted<ProvidedVar>) =    
+            let vRaw = v.PUntaint (id,m)
+            varConv.Remove vRaw |> ignore
+
+        and methodCallToExpr top _origExpr (mce:Tainted<_>) =    
+            let (objOpt,meth,args) = mce.PApply3(id,m)
+            let targetMethInfo = ProvidedMeth(amap,meth.PApply((fun mce -> upcast mce), m),None,m)
+            let objArgs = 
+                match objOpt.PApplyOption(id, m) with
+                | None -> []
+                | Some objExpr -> [exprToExpr objExpr]
+
+            let arguments = [ for ea in args.PApplyArray(id, "GetInvokerExpresson", m) -> exprToExpr ea ]
+            let genericArguments = 
+                if meth.PUntaint((fun m -> m.IsGenericMethod), m) then 
+                    meth.PApplyArray((fun m -> m.GetGenericArguments()), "GetGenericArguments", m)  
+                else 
+                    [| |]
+            let replacementGenericArguments = genericArguments |> Array.map (fun t->Import.ImportProvidedType amap m t) |> List.ofArray
+
+            let mut         = if top then mut else PossiblyMutates
+            let isSuperInit = if top then isSuperInit else ValUseFlag.NormalValUse
+            let isProp      = if top then isProp else false
+            let callExpr = BuildMethodCall tcVal g amap mut m isProp targetMethInfo isSuperInit replacementGenericArguments objArgs arguments
+            Some meth, callExpr
+
+        and varToExpr (pe:Tainted<ProvidedVar>) =    
+            // sub in the appropriate argument
+            // REVIEW: "thisArg" pointer should be first, if present
+            let vRaw = pe.PUntaint(id,m)
+            if not (varConv.ContainsKey vRaw) then
+                        let typeProviderDesignation = ExtensionTyping.DisplayNameOfTypeProvider (pe.TypeProvider, m)
+                        error(NumberedError(FSComp.SR.etIncorrectParameterExpression(typeProviderDesignation,vRaw.Name), m))
+            varConv.[vRaw]
+                
+        and exprToExpr expr =
+            let _, (resExpr, _) = exprToExprAndWitness false expr
+            resExpr
+
+        exprToExprAndWitness true expr
+
+        
+    // fill in parameter holes in the expression   
+    let TranslateInvokerExpressionForProvidedMethodCall tcVal (g, amap, mut, isProp, isSuperInit, mi:Tainted<ProvidedMethodBase>, objArgs, allArgs, m) =        
+        let parameters = 
+            mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m)
+        let paramTys = 
+            parameters
+            |> Array.map (fun p -> p.PApply((fun st -> st.ParameterType),m))
+        let erasedParamTys = 
+            paramTys
+            |> Array.map (fun pty -> eraseSystemType (amap,m,pty))
+        let paramVars = 
+            erasedParamTys
+            |> Array.mapi (fun i erasedParamTy -> erasedParamTy.PApply((fun ty ->  ProvidedVar.Fresh("arg" + i.ToString(),ty)),m))
+
+
+        // encode "this" as the first ParameterExpression, if applicable
+        let thisArg, paramVars = 
+            match objArgs with
+            | [objArg] -> 
+                let erasedThisTy = eraseSystemType (amap,m,mi.PApply((fun mi -> mi.DeclaringType),m))
+                let thisVar = erasedThisTy.PApply((fun ty -> ProvidedVar.Fresh("this", ty)), m)
+                Some objArg , Array.append [| thisVar |] paramVars
+            | [] -> None , paramVars
+            | _ -> failwith "multiple objArgs?"
+            
+        let ea = mi.PApplyWithProvider((fun (methodInfo,provider) -> ExtensionTyping.GetInvokerExpression(provider, methodInfo, [| for p in paramVars -> p.PUntaintNoFailure id |])), m)
+
+        convertProvidedExpressionToExprAndWitness tcVal (thisArg,allArgs,paramVars,g,amap,mut,isProp,isSuperInit,m,ea)
+
+            
+    let BuildInvokerExpressionForProvidedMethodCall tcVal (g, amap, mi:Tainted<ProvidedMethodBase>, objArgs, mut, isProp, isSuperInit, allArgs, m) =
+        try                   
+            let methInfoOpt, (expr, retTy) = TranslateInvokerExpressionForProvidedMethodCall tcVal (g, amap, mut, isProp, isSuperInit, mi, objArgs, allArgs, m)
+
+            let exprty = GetCompiledReturnTyOfProvidedMethodInfo amap m mi |> GetFSharpViewOfReturnType g
+            let expr = mkCoerceIfNeeded g exprty retTy expr
+            methInfoOpt, expr, exprty
+        with
+            | :? TypeProviderError as tpe ->
+                let typeName = mi.PUntaint((fun mb -> mb.DeclaringType.FullName), m)
+                let methName = mi.PUntaint((fun mb -> mb.Name), m)
+                raise( tpe.WithContext(typeName, methName) )  // loses original stack trace
+#endif

@@ -22,13 +22,11 @@ open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.QuotationPickler
 open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Compiler.Rational
-open Microsoft.FSharp.Control
-open Microsoft.FSharp.Control.LazyExtensions
 
-//#if EXTENSIONTYPING
-//open Microsoft.FSharp.Compiler.ExtensionTyping
-//open Microsoft.FSharp.Core.CompilerServices
-//#endif
+#if EXTENSIONTYPING
+open Microsoft.FSharp.Compiler.ExtensionTyping
+open Microsoft.FSharp.Core.CompilerServices
+#endif
 
 #if DEBUG
 ///verboseStamps: print #stamp on each id -- very verbose - but sometimes useful. Turn on using '--stamps'
@@ -440,18 +438,18 @@ let parentCompPath (CompPath(scoref,cpath)) =
     CompPath(scoref,a)
 let mkNestedCPath (CompPath(scoref,p)) n modKind = CompPath(scoref,p@[(n,modKind)])
 
-//#if EXTENSIONTYPING
-//let definitionLocationOfProvidedItem (p : Tainted<#IProvidedCustomAttributeProvider>) =
-//    let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure(id)))
-//    match attrs with
-//    | None | Some (null, _, _) -> None
-//    | Some (filePath, line, column) -> 
-//        // Coordinates from type provider are 1-based for lines and columns
-//        // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
-//        let pos = Range.mkPos line (max 0 (column - 1)) 
-//        Range.mkRange  filePath pos pos |> Some
-//    
-//#endif
+#if EXTENSIONTYPING
+let definitionLocationOfProvidedItem (p : Tainted<#IProvidedCustomAttributeProvider>) =
+    let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure(id)))
+    match attrs with
+    | None | Some (null, _, _) -> None
+    | Some (filePath, line, column) -> 
+        // Coordinates from type provider are 1-based for lines and columns
+        // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
+        let pos = Range.mkPos line (max 0 (column - 1)) 
+        Range.mkRange  filePath pos pos |> Some
+    
+#endif
 
 
 
@@ -473,12 +471,12 @@ type Entity =
     /// The display name of the namespace, module or type, e.g. List instead of List`1, including static parameters if any
     member x.DisplayNameWithStaticParameters = x.GetDisplayName(true, false)
 
-//#if EXTENSIONTYPING
-//    member x.IsStaticInstantiationTycon = 
-//        x.IsProvidedErasedTycon &&
-//            let _nm,args = PrettyNaming.demangleProvidedTypeName x.LogicalName
-//            args.Length > 0 
-//#endif
+#if EXTENSIONTYPING
+    member x.IsStaticInstantiationTycon = 
+        x.IsProvidedErasedTycon &&
+            let _nm,args = PrettyNaming.demangleProvidedTypeName x.LogicalName
+            args.Length > 0 
+#endif
 
     member x.GetDisplayName(withStaticParameters, withUnderscoreTypars) = 
         let nm = x.LogicalName
@@ -486,39 +484,37 @@ type Entity =
             match x.TyparsNoRange with 
             | [] -> nm
             | tps -> 
-                    let nm = DemangleGenericTypeName nm
-                    if withUnderscoreTypars && tps.Length > 0 then 
-                        nm + "<" + String.concat "," (Array.create tps.Length "_") + ">"
-                    else
-                        nm
-// added this line, seemed like it'd work
-        getName()
+                let nm = DemangleGenericTypeName nm
+                if withUnderscoreTypars && tps.Length > 0 then 
+                    nm + "<" + String.concat "," (Array.create tps.Length "_") + ">"
+                else
+                    nm
 
-//#if EXTENSIONTYPING
-//        if x.IsProvidedErasedTycon then 
-//            let nm,args = PrettyNaming.demangleProvidedTypeName nm
-//            if withStaticParameters && args.Length > 0 then 
-//                nm + "<" + String.concat "," (Array.map snd args) + ">"
-//            else
-//                nm
-//        else
-//            getName ()
-//#else
-//        ignore withStaticParameters
-//        getName ()
-//#endif
+#if EXTENSIONTYPING
+        if x.IsProvidedErasedTycon then 
+            let nm,args = PrettyNaming.demangleProvidedTypeName nm
+            if withStaticParameters && args.Length > 0 then 
+                nm + "<" + String.concat "," (Array.map snd args) + ">"
+            else
+                nm
+        else
+            getName ()
+#else
+        ignore withStaticParameters
+        getName ()
+#endif
 
 
     /// The code location where the module, namespace or type is defined.
     member x.Range = 
-//#if EXTENSIONTYPING    
-//        match x.TypeReprInfo with
-//        | TProvidedTypeExtensionPoint info ->
-//            match definitionLocationOfProvidedItem info.ProvidedType with
-//            |   Some range -> range
-//            |   None -> x.Data.entity_range
-//        | _ -> 
-//#endif
+#if EXTENSIONTYPING    
+        match x.TypeReprInfo with
+        | TProvidedTypeExtensionPoint info ->
+            match definitionLocationOfProvidedItem info.ProvidedType with
+            |   Some range -> range
+            |   None -> x.Data.entity_range
+        | _ -> 
+#endif
         x.Data.entity_range
 
     /// The range in the implementation, adjusted for an item in a signature
@@ -548,11 +544,11 @@ type Entity =
     /// or comes from another F# assembly then it does not (because the documentation will get read from 
     /// an XML file).
     member x.XmlDoc = 
-//#if EXTENSIONTYPING
-//        match x.TypeReprInfo with
-//        | TProvidedTypeExtensionPoint info -> XmlDoc (info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))))
-//        | _ -> 
-//#endif
+#if EXTENSIONTYPING
+        match x.TypeReprInfo with
+        | TProvidedTypeExtensionPoint info -> XmlDoc (info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))))
+        | _ -> 
+#endif
         x.Data.entity_xmldoc
 
     /// The XML documentation sig-string of the entity, if any, to use to lookup an .xml doc file. This also acts
@@ -629,40 +625,40 @@ type Entity =
 
     /// Indicates if the entity is an F# module definition
     member x.IsModule = x.IsModuleOrNamespace && (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace -> false | _ -> true)
-//#if EXTENSIONTYPING
-//
-//    /// Indicates if the entity is a provided type or namespace definition
-//    member x.IsProvided = 
-//        match x.TypeReprInfo with 
-//        | TProvidedTypeExtensionPoint _ -> true
-//        | TProvidedNamespaceExtensionPoint _ -> true
-//        | _ -> false
-//
-//    /// Indicates if the entity is a provided namespace fragment
-//    member x.IsProvidedNamespace = 
-//        match x.TypeReprInfo with 
-//        | TProvidedNamespaceExtensionPoint _ -> true
-//        | _ -> false
-//
-//    /// Indicates if the entity is an erased provided type definition
-//    member x.IsProvidedErasedTycon = 
-//        match x.TypeReprInfo with 
-//        | TProvidedTypeExtensionPoint info -> info.IsErased
-//        | _ -> false
-//
-//    /// Indicates if the entity is a generated provided type definition, i.e. not erased.
-//    member x.IsProvidedGeneratedTycon = 
-//        match x.TypeReprInfo with 
-//        | TProvidedTypeExtensionPoint info -> info.IsGenerated
-//        | _ -> false
-//#endif
+#if EXTENSIONTYPING
+
+    /// Indicates if the entity is a provided type or namespace definition
+    member x.IsProvided = 
+        match x.TypeReprInfo with 
+        | TProvidedTypeExtensionPoint _ -> true
+        | TProvidedNamespaceExtensionPoint _ -> true
+        | _ -> false
+
+    /// Indicates if the entity is a provided namespace fragment
+    member x.IsProvidedNamespace = 
+        match x.TypeReprInfo with 
+        | TProvidedNamespaceExtensionPoint _ -> true
+        | _ -> false
+
+    /// Indicates if the entity is an erased provided type definition
+    member x.IsProvidedErasedTycon = 
+        match x.TypeReprInfo with 
+        | TProvidedTypeExtensionPoint info -> info.IsErased
+        | _ -> false
+
+    /// Indicates if the entity is a generated provided type definition, i.e. not erased.
+    member x.IsProvidedGeneratedTycon = 
+        match x.TypeReprInfo with 
+        | TProvidedTypeExtensionPoint info -> info.IsGenerated
+        | _ -> false
+#endif
 
     /// Indicates if the entity is erased, either a measure definition, or an erased provided type definition
     member x.IsErased = 
         x.IsMeasureableReprTycon 
-//#if EXTENSIONTYPING
-//        || x.IsProvidedErasedTycon
-//#endif
+#if EXTENSIONTYPING
+        || x.IsProvidedErasedTycon
+#endif
 
     /// Get a blob of data indicating how this type is nested inside other namespaces, modules and types.
     member x.CompilationPathOpt = x.Data.entity_cpath 
@@ -808,12 +804,12 @@ type Entity =
 
     /// Indicates if this is an enum type definition 
     member x.IsEnumTycon            = 
-//#if EXTENSIONTYPING
-//        match x.TypeReprInfo with 
-//        | TProvidedTypeExtensionPoint info -> info.IsEnum 
-//        | TProvidedNamespaceExtensionPoint _ -> false
-//        | _ ->
-//#endif
+#if EXTENSIONTYPING
+        match x.TypeReprInfo with 
+        | TProvidedTypeExtensionPoint info -> info.IsEnum 
+        | TProvidedNamespaceExtensionPoint _ -> false
+        | _ ->
+#endif
         x.IsILEnumTycon || x.IsFSharpEnumTycon
 
 
@@ -833,12 +829,12 @@ type Entity =
 
     /// Indicates if this is a struct or enum type definition , i.e. a value type definition
     member x.IsStructOrEnumTycon = 
-//#if EXTENSIONTYPING
-//        match x.TypeReprInfo with 
-//        | TProvidedTypeExtensionPoint info -> info.IsStructOrEnum 
-//        | TProvidedNamespaceExtensionPoint _ -> false
-//        | _ ->
-//#endif
+#if EXTENSIONTYPING
+        match x.TypeReprInfo with 
+        | TProvidedTypeExtensionPoint info -> info.IsStructOrEnum 
+        | TProvidedNamespaceExtensionPoint _ -> false
+        | _ ->
+#endif
         x.IsILStructOrEnumTycon || x.IsFSharpStructOrEnumTycon
 
     /// Gets the immediate interface definitions of an F# type definition. Further interfaces may be supported through class and interface inheritance.
@@ -887,23 +883,23 @@ type Entity =
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
     member x.CompiledRepresentation =
-//#if EXTENSIONTYPING
-//        match x.TypeReprInfo with 
-//        // We should never be computing this property for erased types
-//        | TProvidedTypeExtensionPoint info when info.IsErased -> 
-//            failwith "No compiled representation for provided erased type"
-//        
-//        // Generated types that are not relocated just point straight to the generated backing assembly, computed from "st".
-//        // These are used when running F# Interactive, which does not use static linking of provider-generated assemblies,
-//        // and also for types with relocation suppressed.
-//        | TProvidedTypeExtensionPoint info when info.IsGenerated && info.IsSuppressRelocate -> 
-//            let st = info.ProvidedType
-//            let tref = ExtensionTyping.GetILTypeRefOfProvidedType (st, x.Range)
-//            let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
-//            CompiledTypeRepr.ILAsmNamed(tref, boxity, None)
-//        | TProvidedNamespaceExtensionPoint _ -> failwith "No compiled representation for provided namespace"
-//        | _ ->
-//#endif
+#if EXTENSIONTYPING
+        match x.TypeReprInfo with 
+        // We should never be computing this property for erased types
+        | TProvidedTypeExtensionPoint info when info.IsErased -> 
+            failwith "No compiled representation for provided erased type"
+        
+        // Generated types that are not relocated just point straight to the generated backing assembly, computed from "st".
+        // These are used when running F# Interactive, which does not use static linking of provider-generated assemblies,
+        // and also for types with relocation suppressed.
+        | TProvidedTypeExtensionPoint info when info.IsGenerated && info.IsSuppressRelocate -> 
+            let st = info.ProvidedType
+            let tref = ExtensionTyping.GetILTypeRefOfProvidedType (st, x.Range)
+            let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
+            CompiledTypeRepr.ILAsmNamed(tref, boxity, None)
+        | TProvidedNamespaceExtensionPoint _ -> failwith "No compiled representation for provided namespace"
+        | _ ->
+#endif
             let ilTypeRefForCompilationPath (CompPath(sref,p)) item = 
                 let rec top racc  p = 
                     match p with 
@@ -1134,19 +1130,18 @@ and
 
     /// Indicates the type is parameterized on a measure (e.g. float<_>) but erases to some other type (e.g. float)
     | TMeasureableRepr   of TType
-    | TNoRepr
 
-//#if EXTENSIONTYPING
-//    /// TProvidedTypeExtensionPoint
-//    ///
-//    /// Indicates the representation information for a provided type. 
-//    | TProvidedTypeExtensionPoint of TProvidedTypeInfo
-//
-//    /// Indicates the representation information for a provided namespace.  
-//    //
-//    // Note, the list could probably be a list of IProvidedNamespace rather than ITypeProvider
-//    | TProvidedNamespaceExtensionPoint of ExtensionTyping.ResolutionEnvironment * Tainted<ITypeProvider> list
-//#endif
+#if EXTENSIONTYPING
+    /// TProvidedTypeExtensionPoint
+    ///
+    /// Indicates the representation information for a provided type. 
+    | TProvidedTypeExtensionPoint of TProvidedTypeInfo
+
+    /// Indicates the representation information for a provided namespace.  
+    //
+    // Note, the list could probably be a list of IProvidedNamespace rather than ITypeProvider
+    | TProvidedNamespaceExtensionPoint of ExtensionTyping.ResolutionEnvironment * Tainted<ITypeProvider> list
+#endif
 
     /// The 'NoRepr' value here has four meanings: 
     ///     (1) it indicates 'not yet known' during the first 2 phases of establishing type definitions
@@ -1156,49 +1151,49 @@ and
     /// 
     /// It would be better to separate the "not yet known" and other cases out.
     /// The information for exception definitions should be folded into here.
-//    | TNoRepr
-//
-//#if EXTENSIONTYPING
-//and 
-//   [< RequireQualifiedAccess; NoComparison; NoEquality>]
-//   
-//   /// The information kept about a provided type
-//   TProvidedTypeInfo = 
-//   { /// The parameters given to the provider that provided to this type.
-//     ResolutionEnvironment : ExtensionTyping.ResolutionEnvironment
-//     /// The underlying System.Type (wrapped as a ProvidedType to make sure we don't call random things on
-//     /// System.Type, and wrapped as Tainted to make sure we track which provider this came from, for reporting
-//     /// error messages)
-//     ProvidedType:  Tainted<ProvidedType>
-//     /// The base type of the type. We use it to compute the compiled representation of the type for erased types.
-//     /// Reading is delayed, since it does an import on the underlying type
-//     LazyBaseType: LazyWithContext<TType, range * TType> 
-//     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-//     IsClass:  bool 
-//     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-//     IsSealed:  bool 
-//     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-//     IsInterface:  bool 
-//     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-//     IsStructOrEnum: bool 
-//     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-//     IsEnum: bool 
-//     /// A type read from the provided type and used to compute basic properties of the type definition.
-//     /// Reading is delayed, since it does an import on the underlying type
-//     UnderlyingTypeOfEnum: (unit -> TType) 
-//     /// A flag read from the provided type and used to compute basic properties of the type definition.
-//     /// Reading is delayed, since it looks at the .BaseType
-//     IsDelegate: (unit -> bool) 
-//     IsErased: bool 
-//     /// Indicates the type is generated, but type-relocation is suppressed
-//     IsSuppressRelocate : bool }
-//
-//   member info.IsGenerated = not info.IsErased
-//   member info.BaseTypeForErased (m,objTy) = 
-//       if info.IsErased then info.LazyBaseType.Force (m,objTy) 
-//       else assert false; failwith "expect erased type"
-//
-//#endif
+    | TNoRepr
+
+#if EXTENSIONTYPING
+and 
+   [< RequireQualifiedAccess; NoComparison; NoEquality>]
+   
+   /// The information kept about a provided type
+   TProvidedTypeInfo = 
+   { /// The parameters given to the provider that provided to this type.
+     ResolutionEnvironment : ExtensionTyping.ResolutionEnvironment
+     /// The underlying System.Type (wrapped as a ProvidedType to make sure we don't call random things on
+     /// System.Type, and wrapped as Tainted to make sure we track which provider this came from, for reporting
+     /// error messages)
+     ProvidedType:  Tainted<ProvidedType>
+     /// The base type of the type. We use it to compute the compiled representation of the type for erased types.
+     /// Reading is delayed, since it does an import on the underlying type
+     LazyBaseType: LazyWithContext<TType, range * TType> 
+     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
+     IsClass:  bool 
+     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
+     IsSealed:  bool 
+     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
+     IsInterface:  bool 
+     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
+     IsStructOrEnum: bool 
+     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
+     IsEnum: bool 
+     /// A type read from the provided type and used to compute basic properties of the type definition.
+     /// Reading is delayed, since it does an import on the underlying type
+     UnderlyingTypeOfEnum: (unit -> TType) 
+     /// A flag read from the provided type and used to compute basic properties of the type definition.
+     /// Reading is delayed, since it looks at the .BaseType
+     IsDelegate: (unit -> bool) 
+     IsErased: bool 
+     /// Indicates the type is generated, but type-relocation is suppressed
+     IsSuppressRelocate : bool }
+
+   member info.IsGenerated = not info.IsErased
+   member info.BaseTypeForErased (m,objTy) = 
+       if info.IsErased then info.LazyBaseType.Force (m,objTy) 
+       else assert false; failwith "expect erased type"
+
+#endif
 
 and 
   TyconObjModelKind = 
@@ -1568,98 +1563,98 @@ and Construct =
     static member NewModuleOrNamespaceType mkind tycons vals = ModuleOrNamespaceType(mkind, QueueList.ofList vals, QueueList.ofList tycons)
     static member NewEmptyModuleOrNamespaceType mkind = Construct.NewModuleOrNamespaceType mkind [] []
 
-//#if EXTENSIONTYPING
-//
-//    static member NewProvidedTyconRepr(resolutionEnvironment,st:Tainted<ProvidedType>,importProvidedType,isSuppressRelocate,m) = 
-//
-//        let isErased = st.PUntaint((fun st -> st.IsErased),m)
-//
-//        let lazyBaseTy = 
-//            LazyWithContext.Create 
-//                ((fun (m,objTy) -> 
-//                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some ty), m)
-//                      match baseSystemTy with 
-//                      | None -> objTy 
-//                      | Some t -> importProvidedType t), 
-//                  ErrorLogger.findOriginalException)
-//
-//        TProvidedTypeExtensionPoint 
-//            { ResolutionEnvironment=resolutionEnvironment
-//              ProvidedType=st
-//              LazyBaseType=lazyBaseTy
-//              UnderlyingTypeOfEnum = (fun () -> importProvidedType (st.PApply((fun st -> st.GetEnumUnderlyingType()),m)))
-//              IsDelegate = (fun () -> st.PUntaint((fun st -> 
-//                                   let baseType = st.BaseType 
-//                                   match baseType with 
-//                                   | null -> false
-//                                   | x when x.IsGenericType -> false
-//                                   | x when x.DeclaringType <> null -> false
-//                                   | x -> x.FullName = "System.Delegate" || x.FullName = "System.MulticastDelegate"), m))
-//              IsEnum = st.PUntaint((fun st -> st.IsEnum), m)
-//              IsStructOrEnum = st.PUntaint((fun st -> st.IsValueType || st.IsEnum), m)
-//              IsInterface = st.PUntaint((fun st -> st.IsInterface), m)
-//              IsSealed = st.PUntaint((fun st -> st.IsSealed), m)
-//              IsClass = st.PUntaint((fun st -> st.IsClass), m)
-//              IsErased = isErased
-//              IsSuppressRelocate = isSuppressRelocate }
-//
-//    static member NewProvidedTycon(resolutionEnvironment, st:Tainted<ProvidedType>, importProvidedType, isSuppressRelocate, m, ?access, ?cpath) = 
-//        let stamp = newStamp() 
-//        let name = st.PUntaint((fun st -> st.Name), m)
-//        let id = ident (name,m)
-//        let kind = 
-//            let isMeasure = 
-//                st.PApplyWithProvider((fun (st,provider) -> 
-//                    let findAttrib (ty:System.Type) (a:CustomAttributeData) = (a.Constructor.DeclaringType.FullName = ty.FullName)  
-//#if FX_NO_CUSTOMATTRIBUTEDATA
-//                    provider.GetMemberCustomAttributesData(st.RawSystemType) 
-//#else
-//                    ignore provider
-//                    st.RawSystemType.GetCustomAttributesData()
-//#endif
-//                        |> Seq.exists (findAttrib typeof<Microsoft.FSharp.Core.MeasureAttribute>)), m)
-//                  .PUntaintNoFailure(fun x -> x)
-//            if isMeasure then TyparKind.Measure else TyparKind.Type
-//
-//        let access = 
-//            match access with 
-//            | Some a -> a 
-//            | None -> TAccess []
-//        let cpath =  
-//            match cpath with 
-//            | None -> 
-//                let ilScopeRef = st.TypeProviderAssemblyRef
-//                let enclosingName = ExtensionTyping.GetFSharpPathToProvidedType(st,m)
-//                CompPath(ilScopeRef,enclosingName |> List.map(fun id->id,ModuleOrNamespaceKind.Namespace))
-//            | Some p -> p
-//        let pubpath = publicPathOfCompPath id cpath
-//
-//        let repr = Construct.NewProvidedTyconRepr(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)
-//
-//        Tycon.New "tycon"
-//          { entity_stamp=stamp;
-//            entity_logical_name=name
-//            entity_compiled_name=None;
-//            entity_kind=kind;
-//            entity_range=m;
-//            entity_other_range=None;
-//            entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false);
-//            entity_attribs=[]; // fetched on demand via est.fs API
-//            entity_typars= LazyWithContext.NotLazy [];
-//            entity_tycon_abbrev = None;
-//            entity_tycon_repr = repr;
-//            entity_tycon_repr_accessibility = TAccess([]);
-//            entity_exn_info=TExnNone;
-//            entity_tycon_tcaug=TyconAugmentation.Create();
-//            entity_modul_contents = lazy new ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []);
-//            // Generated types get internal accessibility
-//            entity_accessiblity= access;
-//            entity_xmldoc =  XmlDoc [||]; // fetched on demand via est.fs API
-//            entity_xmldocsig="";        
-//            entity_pubpath = Some pubpath;
-//            entity_cpath = Some cpath;
-//            entity_il_repr_cache = newCache(); } 
-//#endif
+#if EXTENSIONTYPING
+
+    static member NewProvidedTyconRepr(resolutionEnvironment,st:Tainted<ProvidedType>,importProvidedType,isSuppressRelocate,m) = 
+
+        let isErased = st.PUntaint((fun st -> st.IsErased),m)
+
+        let lazyBaseTy = 
+            LazyWithContext.Create 
+                ((fun (m,objTy) -> 
+                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some ty), m)
+                      match baseSystemTy with 
+                      | None -> objTy 
+                      | Some t -> importProvidedType t), 
+                  ErrorLogger.findOriginalException)
+
+        TProvidedTypeExtensionPoint 
+            { ResolutionEnvironment=resolutionEnvironment
+              ProvidedType=st
+              LazyBaseType=lazyBaseTy
+              UnderlyingTypeOfEnum = (fun () -> importProvidedType (st.PApply((fun st -> st.GetEnumUnderlyingType()),m)))
+              IsDelegate = (fun () -> st.PUntaint((fun st -> 
+                                   let baseType = st.BaseType 
+                                   match baseType with 
+                                   | null -> false
+                                   | x when x.IsGenericType -> false
+                                   | x when x.DeclaringType <> null -> false
+                                   | x -> x.FullName = "System.Delegate" || x.FullName = "System.MulticastDelegate"), m))
+              IsEnum = st.PUntaint((fun st -> st.IsEnum), m)
+              IsStructOrEnum = st.PUntaint((fun st -> st.IsValueType || st.IsEnum), m)
+              IsInterface = st.PUntaint((fun st -> st.IsInterface), m)
+              IsSealed = st.PUntaint((fun st -> st.IsSealed), m)
+              IsClass = st.PUntaint((fun st -> st.IsClass), m)
+              IsErased = isErased
+              IsSuppressRelocate = isSuppressRelocate }
+
+    static member NewProvidedTycon(resolutionEnvironment, st:Tainted<ProvidedType>, importProvidedType, isSuppressRelocate, m, ?access, ?cpath) = 
+        let stamp = newStamp() 
+        let name = st.PUntaint((fun st -> st.Name), m)
+        let id = ident (name,m)
+        let kind = 
+            let isMeasure = 
+                st.PApplyWithProvider((fun (st,provider) -> 
+                    let findAttrib (ty:System.Type) (a:CustomAttributeData) = (a.Constructor.DeclaringType.FullName = ty.FullName)  
+#if FX_NO_CUSTOMATTRIBUTEDATA
+                    provider.GetMemberCustomAttributesData(st.RawSystemType) 
+#else
+                    ignore provider
+                    st.RawSystemType.GetCustomAttributesData()
+#endif
+                        |> Seq.exists (findAttrib typeof<Microsoft.FSharp.Core.MeasureAttribute>)), m)
+                  .PUntaintNoFailure(fun x -> x)
+            if isMeasure then TyparKind.Measure else TyparKind.Type
+
+        let access = 
+            match access with 
+            | Some a -> a 
+            | None -> TAccess []
+        let cpath =  
+            match cpath with 
+            | None -> 
+                let ilScopeRef = st.TypeProviderAssemblyRef
+                let enclosingName = ExtensionTyping.GetFSharpPathToProvidedType(st,m)
+                CompPath(ilScopeRef,enclosingName |> List.map(fun id->id,ModuleOrNamespaceKind.Namespace))
+            | Some p -> p
+        let pubpath = publicPathOfCompPath id cpath
+
+        let repr = Construct.NewProvidedTyconRepr(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)
+
+        Tycon.New "tycon"
+          { entity_stamp=stamp;
+            entity_logical_name=name
+            entity_compiled_name=None;
+            entity_kind=kind;
+            entity_range=m;
+            entity_other_range=None;
+            entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false);
+            entity_attribs=[]; // fetched on demand via est.fs API
+            entity_typars= LazyWithContext.NotLazy [];
+            entity_tycon_abbrev = None;
+            entity_tycon_repr = repr;
+            entity_tycon_repr_accessibility = TAccess([]);
+            entity_exn_info=TExnNone;
+            entity_tycon_tcaug=TyconAugmentation.Create();
+            entity_modul_contents = lazy new ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []);
+            // Generated types get internal accessibility
+            entity_accessiblity= access;
+            entity_xmldoc =  XmlDoc [||]; // fetched on demand via est.fs API
+            entity_xmldocsig="";        
+            entity_pubpath = Some pubpath;
+            entity_cpath = Some cpath;
+            entity_il_repr_cache = newCache(); } 
+#endif
 
     static member NewModuleOrNamespace cpath access (id:Ident) xml attribs mtype = 
         let stamp = newStamp() 
@@ -2403,102 +2398,102 @@ and NonLocalEntityRef    =
             let next = entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind(path.[i])
             match next with 
             | Some res -> NonLocalEntityRef.TryDerefEntityPath(ccu, path, (i+1), res)
-//#if EXTENSIONTYPING
-//            | None -> NonLocalEntityRef.TryDerefEntityPathViaProvidedType(ccu, path, i, entity)
-//#else
-//            | None -> None
-//#endif
+#if EXTENSIONTYPING
+            | None -> NonLocalEntityRef.TryDerefEntityPathViaProvidedType(ccu, path, i, entity)
+#else
+            | None -> None
+#endif
 
-//#if EXTENSIONTYPING
-//    /// Try to find the entity correspondng to the given path, using type-providers to link the data
-//    static member TryDerefEntityPathViaProvidedType(ccu: CcuThunk, path:string[], i:int, entity:Entity) = 
-//        // Errors during linking are not necessarily given good ranges. This has always been the case in F# 2.0, but also applies to
-//        // type provider type linking errors in F# 3.0.
-//        let m = range0
-//        match entity.TypeReprInfo with
-//        | TProvidedTypeExtensionPoint info -> 
-//            let resolutionEnvironment = info.ResolutionEnvironment
-//            let st = info.ProvidedType
-//                        
-//            // In this case, we're safely in the realm of types. Just iterate through the nested
-//            // types until i = path.Length-1. Create the Tycon's as needed
-//            let rec tryResolveNestedTypeOf(parentEntity:Entity,resolutionEnvironment,st:Tainted<ProvidedType>,i) = 
-//                match st.PApply((fun st -> st.GetNestedType path.[i]),m) with
-//                | Tainted.Null -> None
-//                | st -> 
-//                    let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
-//                    parentEntity.ModuleOrNamespaceType.AddProvidedTypeEntity(newEntity)
-//                    if i = path.Length-1 then Some(newEntity)
-//                    else tryResolveNestedTypeOf(newEntity,resolutionEnvironment,st,i+1)
-//
-//            tryResolveNestedTypeOf(entity,resolutionEnvironment,st,i)
-//
-//        | TProvidedNamespaceExtensionPoint(resolutionEnvironment,resolvers) -> 
-//
-//            // In this case, we're still in the realm of extensible namespaces. 
-//            //     <----entity-->
-//            //     0 .........i-1..i .......... j ..... path.Length-1
-//            //
-//            //     <----entity-->  <---resolver---->
-//            //     0 .........i-1..i ............. j ..... path.Length-1
-//            //
-//            //     <----entity-->  <---resolver----> <--loop--->
-//            //     0 .........i-1..i ............. j ..... path.Length-1
-//            //
-//            // We now query the resolvers with 
-//            //      moduleOrNamespace = path.[0..j-1] 
-//            //      typeName = path.[j] 
-//            // starting with j = i and then progressively increasing j
-//                        
-//            // This function queries at 'j'
-//            let tryResolvePrefix j = 
-//                assert (j >= 0)
-//                assert (j <= path.Length - 1)
-//                let matched = 
-//                    [ for resolver in resolvers  do
-//                        let moduleOrNamespace = if j = 0 then null else path.[0..j-1]
-//                        let typename = path.[j]
-//                        let resolution = ExtensionTyping.TryLinkProvidedType(resolutionEnvironment,resolver,moduleOrNamespace,typename,m)
-//                        match resolution with
-//                        | None | Some (Tainted.Null) -> ()
-//                        | Some st -> yield (resolver,st) ]
-//                match matched with
-//                | [(_,st)] ->
-//                    // 'entity' is at position i in the dereference chain. We resolved to position 'j'.
-//                    // Inject namespaces until we're an position j, and then inject the type.
-//                    // Note: this is similar to code in build.fs
-//                    let rec injectNamespacesFromIToJ (entity: Entity) k = 
-//                        if k = j  then 
-//                            let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
-//                            entity.ModuleOrNamespaceType.AddProvidedTypeEntity(newEntity)
-//                            newEntity
-//                        else
-//                            let cpath = mkNestedCPath entity.CompilationPath entity.LogicalName ModuleOrNamespaceKind.Namespace
-//                            let newEntity = 
-//                                Construct.NewModuleOrNamespace 
-//                                    (Some cpath) 
-//                                    (TAccess []) (ident(path.[k],m)) XmlDoc.Empty [] 
-//                                    (notlazy (Construct.NewEmptyModuleOrNamespaceType Namespace)) 
-//                            entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation(newEntity)
-//                            injectNamespacesFromIToJ newEntity (k+1)
-//                    let newEntity = injectNamespacesFromIToJ entity i
-//                                
-//                    // newEntity is at 'j'
-//                    NonLocalEntityRef.TryDerefEntityPath(ccu, path, (j+1), newEntity) 
-//
-//                | [] -> None 
-//                | _ -> failwith "Unexpected"
-//
-//            let rec tryResolvePrefixes j = 
-//                if j >= path.Length then None
-//                else match tryResolvePrefix j with 
-//                      | None -> tryResolvePrefixes (j+1)
-//                      | Some res -> Some res
-//
-//            tryResolvePrefixes i
-//
-//        | _ -> None
-//#endif
+#if EXTENSIONTYPING
+    /// Try to find the entity correspondng to the given path, using type-providers to link the data
+    static member TryDerefEntityPathViaProvidedType(ccu: CcuThunk, path:string[], i:int, entity:Entity) = 
+        // Errors during linking are not necessarily given good ranges. This has always been the case in F# 2.0, but also applies to
+        // type provider type linking errors in F# 3.0.
+        let m = range0
+        match entity.TypeReprInfo with
+        | TProvidedTypeExtensionPoint info -> 
+            let resolutionEnvironment = info.ResolutionEnvironment
+            let st = info.ProvidedType
+                        
+            // In this case, we're safely in the realm of types. Just iterate through the nested
+            // types until i = path.Length-1. Create the Tycon's as needed
+            let rec tryResolveNestedTypeOf(parentEntity:Entity,resolutionEnvironment,st:Tainted<ProvidedType>,i) = 
+                match st.PApply((fun st -> st.GetNestedType path.[i]),m) with
+                | Tainted.Null -> None
+                | st -> 
+                    let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
+                    parentEntity.ModuleOrNamespaceType.AddProvidedTypeEntity(newEntity)
+                    if i = path.Length-1 then Some(newEntity)
+                    else tryResolveNestedTypeOf(newEntity,resolutionEnvironment,st,i+1)
+
+            tryResolveNestedTypeOf(entity,resolutionEnvironment,st,i)
+
+        | TProvidedNamespaceExtensionPoint(resolutionEnvironment,resolvers) -> 
+
+            // In this case, we're still in the realm of extensible namespaces. 
+            //     <----entity-->
+            //     0 .........i-1..i .......... j ..... path.Length-1
+            //
+            //     <----entity-->  <---resolver---->
+            //     0 .........i-1..i ............. j ..... path.Length-1
+            //
+            //     <----entity-->  <---resolver----> <--loop--->
+            //     0 .........i-1..i ............. j ..... path.Length-1
+            //
+            // We now query the resolvers with 
+            //      moduleOrNamespace = path.[0..j-1] 
+            //      typeName = path.[j] 
+            // starting with j = i and then progressively increasing j
+                        
+            // This function queries at 'j'
+            let tryResolvePrefix j = 
+                assert (j >= 0)
+                assert (j <= path.Length - 1)
+                let matched = 
+                    [ for resolver in resolvers  do
+                        let moduleOrNamespace = if j = 0 then null else path.[0..j-1]
+                        let typename = path.[j]
+                        let resolution = ExtensionTyping.TryLinkProvidedType(resolutionEnvironment,resolver,moduleOrNamespace,typename,m)
+                        match resolution with
+                        | None | Some (Tainted.Null) -> ()
+                        | Some st -> yield (resolver,st) ]
+                match matched with
+                | [(_,st)] ->
+                    // 'entity' is at position i in the dereference chain. We resolved to position 'j'.
+                    // Inject namespaces until we're an position j, and then inject the type.
+                    // Note: this is similar to code in build.fs
+                    let rec injectNamespacesFromIToJ (entity: Entity) k = 
+                        if k = j  then 
+                            let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
+                            entity.ModuleOrNamespaceType.AddProvidedTypeEntity(newEntity)
+                            newEntity
+                        else
+                            let cpath = mkNestedCPath entity.CompilationPath entity.LogicalName ModuleOrNamespaceKind.Namespace
+                            let newEntity = 
+                                Construct.NewModuleOrNamespace 
+                                    (Some cpath) 
+                                    (TAccess []) (ident(path.[k],m)) XmlDoc.Empty [] 
+                                    (notlazy (Construct.NewEmptyModuleOrNamespaceType Namespace)) 
+                            entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation(newEntity)
+                            injectNamespacesFromIToJ newEntity (k+1)
+                    let newEntity = injectNamespacesFromIToJ entity i
+                                
+                    // newEntity is at 'j'
+                    NonLocalEntityRef.TryDerefEntityPath(ccu, path, (j+1), newEntity) 
+
+                | [] -> None 
+                | _ -> failwith "Unexpected"
+
+            let rec tryResolvePrefixes j = 
+                if j >= path.Length then None
+                else match tryResolvePrefix j with 
+                      | None -> tryResolvePrefixes (j+1)
+                      | Some res -> Some res
+
+            tryResolvePrefixes i
+
+        | _ -> None
+#endif
             
     /// Try to link a non-local entity reference to an actual entity
     member nleref.TryDeref(canError) = 
@@ -2697,18 +2692,18 @@ and
     /// Indicates if the entity is an F# module definition
     member x.IsModule             = x.Deref.IsModule
     member x.CompilationPathOpt   = x.Deref.CompilationPathOpt
-//#if EXTENSIONTYPING
-//    /// Indicates if the entity is a provided namespace fragment
-//    member x.IsProvided               = x.Deref.IsProvided
-//    /// Indicates if the entity is a provided namespace fragment
-//    member x.IsProvidedNamespace      = x.Deref.IsProvidedNamespace
-//    /// Indicates if the entity is an erased provided type definition
-//    member x.IsProvidedErasedTycon    = x.Deref.IsProvidedErasedTycon
-//    /// Indicates if the entity is an erased provided type definition that incorporates a static instantiation (and therefore in some sense compiler generated)
-//    member x.IsStaticInstantiationTycon    = x.Deref.IsStaticInstantiationTycon
-//    /// Indicates if the entity is a generated provided type definition, i.e. not erased.
-//    member x.IsProvidedGeneratedTycon = x.Deref.IsProvidedGeneratedTycon
-//#endif
+#if EXTENSIONTYPING
+    /// Indicates if the entity is a provided namespace fragment
+    member x.IsProvided               = x.Deref.IsProvided
+    /// Indicates if the entity is a provided namespace fragment
+    member x.IsProvidedNamespace      = x.Deref.IsProvidedNamespace
+    /// Indicates if the entity is an erased provided type definition
+    member x.IsProvidedErasedTycon    = x.Deref.IsProvidedErasedTycon
+    /// Indicates if the entity is an erased provided type definition that incorporates a static instantiation (and therefore in some sense compiler generated)
+    member x.IsStaticInstantiationTycon    = x.Deref.IsStaticInstantiationTycon
+    /// Indicates if the entity is a generated provided type definition, i.e. not erased.
+    member x.IsProvidedGeneratedTycon = x.Deref.IsProvidedGeneratedTycon
+#endif
     /// Get a blob of data indicating how this type is nested inside other namespaces, modules and types.
     member x.CompilationPath      = x.Deref.CompilationPath
     /// Get a table of fields for all the F#-defined record, struct and class fields in this type definition, including
@@ -3024,18 +3019,18 @@ and
       /// Indicates that this DLL was compiled using the F# compiler and has F# metadata
       IsFSharp: bool 
       
-//#if EXTENSIONTYPING
-//      /// Is the CCu an assembly inected by a type provider
-//      IsProviderGenerated: bool 
-//
-//      /// Triggered when the contents of the CCU are invalidated
-//      InvalidateEvent : IEvent<string> 
-//
-//      /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
-//      /// logic in tastops.fs
-//      ImportProvidedType : Tainted<ProvidedType> -> TType 
-//      
-//#endif
+#if EXTENSIONTYPING
+      /// Is the CCu an assembly inected by a type provider
+      IsProviderGenerated: bool 
+
+      /// Triggered when the contents of the CCU are invalidated
+      InvalidateEvent : IEvent<string> 
+
+      /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
+      /// logic in tastops.fs
+      ImportProvidedType : Tainted<ProvidedType> -> TType 
+      
+#endif
       /// Indicates that this DLL uses pre-F#-4.0 quotation literals somewhere. This is used to implement a restriction on static linking
       mutable UsesFSharp20PlusQuotations : bool
       
@@ -3108,14 +3103,14 @@ and CcuThunk =
     member ccu.Stamp               = ccu.Deref.Stamp
     /// Holds the filename for the DLL, if any 
     member ccu.FileName            = ccu.Deref.FileName
-//#if EXTENSIONTYPING
-//    /// Is the CCu an EST injected assembly
-//    member ccu.IsProviderGenerated      = ccu.Deref.IsProviderGenerated
-//
-//    /// Used to make 'forward' calls into the loader during linking
-//    member ccu.ImportProvidedType ty : TType = ccu.Deref.ImportProvidedType ty
-//
-//#endif
+#if EXTENSIONTYPING
+    /// Is the CCu an EST injected assembly
+    member ccu.IsProviderGenerated      = ccu.Deref.IsProviderGenerated
+
+    /// Used to make 'forward' calls into the loader during linking
+    member ccu.ImportProvidedType ty : TType = ccu.Deref.ImportProvidedType ty
+
+#endif
     /// The fully qualified assembly reference string to refer to this assembly. This is persisted in quotations 
     member ccu.QualifiedName       = ccu.Deref.QualifiedName
 
@@ -4048,11 +4043,11 @@ let tyconRefUsesLocalXmlDoc compilingFslib (x: TyconRef) =
     match x with 
     | ERefLocal _ -> true
     | ERefNonLocal _ ->
-//#if EXTENSIONTYPING
-//        match x.TypeReprInfo with
-//        | TProvidedTypeExtensionPoint _ -> true
-//        | _ -> 
-//#endif
+#if EXTENSIONTYPING
+        match x.TypeReprInfo with
+        | TProvidedTypeExtensionPoint _ -> true
+        | _ -> 
+#endif
         compilingFslib
     
 let entityRefInThisAssembly compilingFslib (x: EntityRef) = 

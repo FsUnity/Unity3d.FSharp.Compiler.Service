@@ -18,9 +18,9 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.Env
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
-//#if EXTENSIONTYPING
-//open Microsoft.FSharp.Compiler.ExtensionTyping
-//#endif
+#if EXTENSIONTYPING
+open Microsoft.FSharp.Compiler.ExtensionTyping
+#endif
 
 /// Represents an interface to some of the functionality of TcImports, for loading assemblies 
 /// and accessing information about generated provided assemblies.
@@ -28,17 +28,17 @@ type AssemblyLoader =
 
     /// Resolve an Abstract IL assembly reference to a Ccu
     abstract LoadAssembly : range * ILAssemblyRef -> CcuResolutionResult
-//#if EXTENSIONTYPING
-//
-//    /// Get a flag indicating if an assembly is a provided assembly, plus the
-//    /// table of information recording remappings from type names in the provided assembly to type
-//    /// names in the statically linked, embedded assembly.
-//    abstract GetProvidedAssemblyInfo : range * Tainted<ProvidedAssembly> -> bool * ProvidedAssemblyStaticLinkingMap option
-//
-//    /// Record a root for a [<Generate>] type to help guide static linking & type relocation
-//    abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
-//#endif
-//        
+#if EXTENSIONTYPING
+
+    /// Get a flag indicating if an assembly is a provided assembly, plus the
+    /// table of information recording remappings from type names in the provided assembly to type
+    /// names in the statically linked, embedded assembly.
+    abstract GetProvidedAssemblyInfo : range * Tainted<ProvidedAssembly> -> bool * ProvidedAssemblyStaticLinkingMap option
+
+    /// Record a root for a [<Generate>] type to help guide static linking & type relocation
+    abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
+#endif
+        
 
 
 //-------------------------------------------------------------------------
@@ -91,15 +91,15 @@ let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) =
             fakeTyconRef.Deref
         with _ ->
             error (Error(FSComp.SR.impReferencedTypeCouldNotBeFoundInAssembly(String.concat "." (Array.append path  [| typeName |]), ccu.AssemblyName),m))
-//#if EXTENSIONTYPING
-//    // Validate (once because of caching)
-//    match tycon.TypeReprInfo with
-//    | TProvidedTypeExtensionPoint info ->
-//            //printfn "ImportTypeRefData: validating type: typeLogicalName = %A" typeName
-//            ExtensionTyping.ValidateProvidedTypeAfterStaticInstantiation(m,info.ProvidedType,path,typeName)
-//    | _ -> 
-//            ()
-//#endif
+#if EXTENSIONTYPING
+    // Validate (once because of caching)
+    match tycon.TypeReprInfo with
+    | TProvidedTypeExtensionPoint info ->
+            //printfn "ImportTypeRefData: validating type: typeLogicalName = %A" typeName
+            ExtensionTyping.ValidateProvidedTypeAfterStaticInstantiation(m,info.ProvidedType,path,typeName)
+    | _ -> 
+            ()
+#endif
     match tryRescopeEntity ccu tycon with 
     | None -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m));
     | Some tcref -> tcref
@@ -185,186 +185,186 @@ let rec CanImportILType (env:ImportMap) m typ =
     | ILType.FunctionPointer _ -> true
     | ILType.Modified(_,_,ty) -> CanImportILType env m ty
     | ILType.TypeVar _u16 -> true
-//
-//#if EXTENSIONTYPING
-//
-///// Import a provided type reference as an F# type TyconRef
-//let ImportProvidedNamedType (env:ImportMap) (m:range) (st:Tainted<ProvidedType>) = 
-//    // See if a reverse-mapping exists for a generated/relocated System.Type
-//    match st.PUntaint((fun st -> st.TryGetTyconRef()),m) with 
-//    | Some x -> (x :?> TyconRef)
-//    | None ->         
-//        let tref = ExtensionTyping.GetILTypeRefOfProvidedType (st,m)
-//        ImportILTypeRef env m tref
-//
-///// Import a provided type as an AbstractIL type
-//let rec ImportProvidedTypeAsILType (env:ImportMap) (m:range) (st:Tainted<ProvidedType>) = 
-//    if st.PUntaint ((fun x -> x.IsVoid),m) then ILType.Void
-//    elif st.PUntaint((fun st -> st.IsGenericParameter),m) then
-//        mkILTyvarTy (uint16 (st.PUntaint((fun st -> st.GenericParameterPosition),m)))
-//    elif st.PUntaint((fun st -> st.IsArray),m) then 
-//        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> st.GetElementType()),m))
-//        ILType.Array(ILArrayShape.FromRank (st.PUntaint((fun st -> st.GetArrayRank()),m)), et)
-//    elif st.PUntaint((fun st -> st.IsByRef),m) then 
-//        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> st.GetElementType()),m))
-//        ILType.Byref et
-//    elif st.PUntaint((fun st -> st.IsPointer),m) then 
-//        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> st.GetElementType()),m))
-//        ILType.Ptr et
-//    else
-//        let gst, genericArgs = 
-//            if st.PUntaint((fun st -> st.IsGenericType),m) then 
-//                let args = st.PApplyArray((fun st -> st.GetGenericArguments()),"GetGenericArguments",m) |> Array.map (ImportProvidedTypeAsILType env m) |> List.ofArray 
-//                let gst = st.PApply((fun st -> st.GetGenericTypeDefinition()),m)
-//                gst, args
-//            else   
-//                st, []
-//        let tref = ExtensionTyping.GetILTypeRefOfProvidedType (gst,m)
-//        let tcref = ImportProvidedNamedType env m gst
-//        let tps = tcref.Typars m
-//        if tps.Length <> genericArgs.Length then 
-//           error(Error(FSComp.SR.impInvalidNumberOfGenericArguments(tcref.CompiledName, tps.Length, genericArgs.Length),m))
-//        // We're converting to an IL type, where generic arguments are erased
-//        let genericArgs = List.zip tps genericArgs |> List.filter (fun (tp,_) -> not tp.IsErased) |> List.map snd
-//
-//        let tspec = mkILTySpec(tref,genericArgs)
-//        if st.PUntaint((fun st -> st.IsValueType),m) then 
-//            ILType.Value tspec 
-//        else 
-//            mkILBoxedType tspec
-//
-///// Import a provided type as an F# type.
-//let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:Tainted<ProvidedType>) = 
-//
-//    let g = env.g
-//    if st.PUntaint((fun st -> st.IsArray),m) then 
-//        let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))
-//        mkArrayTy g (st.PUntaint((fun st -> st.GetArrayRank()),m))  elemTy m
-//    elif st.PUntaint((fun st -> st.IsByRef),m) then 
-//        let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))
-//        mkByrefTy g elemTy
-//    elif st.PUntaint((fun st -> st.IsPointer),m) then 
-//        let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))
-//        mkNativePtrType g elemTy
-//    else
-//
-//        // REVIEW: Extension type could try to be its own generic arg (or there could be a type loop)
-//        let tcref, genericArgs = 
-//            if st.PUntaint((fun st -> st.IsGenericType),m) then 
-//                let tcref = ImportProvidedNamedType env m (st.PApply((fun st -> st.GetGenericTypeDefinition()),m))
-//                let args = st.PApplyArray((fun st -> st.GetGenericArguments()),"GetGenericArguments",m) |> Array.map (ImportProvidedType env m (* tinst *) ) |> List.ofArray 
-//                tcref,args
-//            else 
-//                let tcref = ImportProvidedNamedType env m st
-//                tcref, [] 
-//        
-//        /// Adjust for the known primitive numeric types that accept units of measure. 
-//        let tcref = 
-//            if tyconRefEq g tcref g.system_Double_tcref && genericArgs.Length = 1 then g.pfloat_tcr
-//            elif tyconRefEq g tcref g.system_Single_tcref && genericArgs.Length = 1 then g.pfloat32_tcr
-//            elif tyconRefEq g tcref g.system_Decimal_tcref && genericArgs.Length = 1 then g.pdecimal_tcr
-//            elif tyconRefEq g tcref g.system_Int16_tcref && genericArgs.Length = 1 then g.pint16_tcr
-//            elif tyconRefEq g tcref g.system_Int32_tcref && genericArgs.Length = 1 then g.pint_tcr
-//            elif tyconRefEq g tcref g.system_Int64_tcref && genericArgs.Length = 1 then g.pint64_tcr
-//            elif tyconRefEq g tcref g.system_SByte_tcref && genericArgs.Length = 1 then g.pint8_tcr
-//            else tcref
-//        
-//        let tps = tcref.Typars m
-//        if tps.Length <> genericArgs.Length then 
-//           error(Error(FSComp.SR.impInvalidNumberOfGenericArguments(tcref.CompiledName, tps.Length, genericArgs.Length),m))
-//
-//        let genericArgs = 
-//            (tps,genericArgs) ||> List.map2 (fun tp genericArg ->  
-//                if tp.Kind = TyparKind.Measure then  
-//                    let rec conv ty = 
-//                        match ty with 
-//                        | TType_app (tcref,[t1;t2]) when tyconRefEq g tcref g.measureproduct_tcr -> MeasureProd (conv t1, conv t2)
-//                        | TType_app (tcref,[t1]) when tyconRefEq g tcref g.measureinverse_tcr -> MeasureInv (conv t1)
-//                        | TType_app (tcref,[]) when tyconRefEq g tcref g.measureone_tcr -> MeasureOne 
-//                        | TType_app (tcref,[]) when tcref.TypeOrMeasureKind = TyparKind.Measure -> MeasureCon tcref
-//                        | TType_app (tcref,_) -> 
-//                            errorR(Error(FSComp.SR.impInvalidMeasureArgument1(tcref.CompiledName, tp.Name),m))
-//                            MeasureOne
-//                        | _ -> 
-//                            errorR(Error(FSComp.SR.impInvalidMeasureArgument2(tp.Name),m))
-//                            MeasureOne
-//
-//                    TType_measure (conv genericArg)
-//                else
-//                    genericArg)
-//
-//        ImportTyconRefApp env tcref genericArgs
-//
-//
-///// Import a provided method reference as an Abstract IL method reference
-//let ImportProvidedMethodBaseAsILMethodRef (env:ImportMap) (m:range) (mbase: Tainted<ProvidedMethodBase>) = 
-//     let tref = ExtensionTyping.GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> mbase.DeclaringType),m), m)
-//
-//     let mbase = 
-//         // Find the formal member corresponding to the called member
-//         match mbase.OfType<ProvidedMethodInfo>() with 
-//         | Some minfo when 
-//                    minfo.PUntaint((fun minfo -> minfo.IsGenericMethod|| minfo.DeclaringType.IsGenericType),m) -> 
-//                let declaringType = minfo.PApply((fun minfo -> minfo.DeclaringType),m)
-//                let declaringGenericTypeDefn =  
-//                    if declaringType.PUntaint((fun t -> t.IsGenericType),m) then 
-//                        declaringType.PApply((fun declaringType -> declaringType.GetGenericTypeDefinition()),m)
-//                    else 
-//                        declaringType
-//                let methods = declaringGenericTypeDefn.PApplyArray((fun x -> x.GetMethods()),"GetMethods",m) 
-//                let metadataToken = minfo.PUntaint((fun minfo -> minfo.MetadataToken),m)
-//                let found = methods |> Array.tryFind (fun x -> x.PUntaint((fun x -> x.MetadataToken),m) = metadataToken) 
-//                match found with
-//                |   Some found -> found.Coerce(m)
-//                |   None -> 
-//                        let methodName = minfo.PUntaint((fun minfo -> minfo.Name),m)
-//                        let typeName = declaringGenericTypeDefn.PUntaint((fun declaringGenericTypeDefn -> declaringGenericTypeDefn.FullName),m)
-//                        error(NumberedError(FSComp.SR.etIncorrectProvidedMethod(ExtensionTyping.DisplayNameOfTypeProvider(minfo.TypeProvider, m),methodName,metadataToken,typeName), m))
-//         | _ -> 
-//         match mbase.OfType<ProvidedConstructorInfo>() with 
-//         | Some cinfo when cinfo.PUntaint((fun x -> x.DeclaringType.IsGenericType),m) -> 
-//                let declaringType = cinfo.PApply((fun x -> x.DeclaringType),m)
-//                let declaringGenericTypeDefn =  declaringType.PApply((fun x -> x.GetGenericTypeDefinition()),m)
-//                // We have to find the uninstantiated formal signature corresponing to this instantiated constructor.
-//                // Annoyingly System.Reflection doesn't give us a MetadataToken to compare on, so we have to look by doing
-//                // the instantiation and comparing..
-//                let found = 
-//                    let ctors = declaringGenericTypeDefn.PApplyArray((fun x -> x.GetConstructors()),"GetConstructors",m) 
-//                    let actualParameterTypes = 
-//                        [ for p in cinfo.PApplyArray((fun x -> x.GetParameters()), "GetParameters",m) do
-//                            yield ImportProvidedType env m (p.PApply((fun p -> p.ParameterType),m)) ]
-//                    let actualGenericArgs = argsOfAppTy env.g (ImportProvidedType env m declaringType)
-//                    ctors |> Array.tryFind (fun ctor -> 
-//                       let formalParameterTypesAfterInstantiation = 
-//                           [ for p in ctor.PApplyArray((fun x -> x.GetParameters()), "GetParameters",m) do
-//                                let ilFormalTy = ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType),m))
-//                                yield ImportILType env m actualGenericArgs ilFormalTy ]
-//                       (formalParameterTypesAfterInstantiation,actualParameterTypes) ||>  List.lengthsEqAndForall2 (typeEquiv env.g))
-//                     
-//                match found with
-//                |   Some found -> found.Coerce(m)
-//                |   None -> 
-//                    let typeName = declaringGenericTypeDefn.PUntaint((fun x -> x.FullName),m)
-//                    error(NumberedError(FSComp.SR.etIncorrectProvidedConstructor(ExtensionTyping.DisplayNameOfTypeProvider(cinfo.TypeProvider, m),typeName), m))
-//         | _ -> mbase
-//
-//     let rty = 
-//         match mbase.OfType<ProvidedMethodInfo>() with 
-//         |  Some minfo -> minfo.PApply((fun minfo -> minfo.ReturnType),m)
-//         |  None ->
-//            match mbase.OfType<ProvidedConstructorInfo>() with
-//            | Some _  -> mbase.PApply((fun _ -> ProvidedType.Void),m)
-//            | _ -> failwith "unexpected"
-//     let genericArity = 
-//        if mbase.PUntaint((fun x -> x.IsGenericMethod),m) then 
-//            mbase.PUntaint((fun x -> x.GetGenericArguments().Length),m)
-//        else 0
-//     let callingConv = (if mbase.PUntaint((fun x -> x.IsStatic),m) then ILCallingConv.Static else ILCallingConv.Instance)
-//     let parameters = 
-//         [ for p in mbase.PApplyArray((fun x -> x.GetParameters()), "GetParameters",m) do
-//              yield ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType),m)) ]
-//     mkILMethRef (tref, callingConv, mbase.PUntaint((fun x -> x.Name),m), genericArity, parameters, ImportProvidedTypeAsILType env m rty )
-//#endif
+
+#if EXTENSIONTYPING
+
+/// Import a provided type reference as an F# type TyconRef
+let ImportProvidedNamedType (env:ImportMap) (m:range) (st:Tainted<ProvidedType>) = 
+    // See if a reverse-mapping exists for a generated/relocated System.Type
+    match st.PUntaint((fun st -> st.TryGetTyconRef()),m) with 
+    | Some x -> (x :?> TyconRef)
+    | None ->         
+        let tref = ExtensionTyping.GetILTypeRefOfProvidedType (st,m)
+        ImportILTypeRef env m tref
+
+/// Import a provided type as an AbstractIL type
+let rec ImportProvidedTypeAsILType (env:ImportMap) (m:range) (st:Tainted<ProvidedType>) = 
+    if st.PUntaint ((fun x -> x.IsVoid),m) then ILType.Void
+    elif st.PUntaint((fun st -> st.IsGenericParameter),m) then
+        mkILTyvarTy (uint16 (st.PUntaint((fun st -> st.GenericParameterPosition),m)))
+    elif st.PUntaint((fun st -> st.IsArray),m) then 
+        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> st.GetElementType()),m))
+        ILType.Array(ILArrayShape.FromRank (st.PUntaint((fun st -> st.GetArrayRank()),m)), et)
+    elif st.PUntaint((fun st -> st.IsByRef),m) then 
+        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> st.GetElementType()),m))
+        ILType.Byref et
+    elif st.PUntaint((fun st -> st.IsPointer),m) then 
+        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> st.GetElementType()),m))
+        ILType.Ptr et
+    else
+        let gst, genericArgs = 
+            if st.PUntaint((fun st -> st.IsGenericType),m) then 
+                let args = st.PApplyArray((fun st -> st.GetGenericArguments()),"GetGenericArguments",m) |> Array.map (ImportProvidedTypeAsILType env m) |> List.ofArray 
+                let gst = st.PApply((fun st -> st.GetGenericTypeDefinition()),m)
+                gst, args
+            else   
+                st, []
+        let tref = ExtensionTyping.GetILTypeRefOfProvidedType (gst,m)
+        let tcref = ImportProvidedNamedType env m gst
+        let tps = tcref.Typars m
+        if tps.Length <> genericArgs.Length then 
+           error(Error(FSComp.SR.impInvalidNumberOfGenericArguments(tcref.CompiledName, tps.Length, genericArgs.Length),m))
+        // We're converting to an IL type, where generic arguments are erased
+        let genericArgs = List.zip tps genericArgs |> List.filter (fun (tp,_) -> not tp.IsErased) |> List.map snd
+
+        let tspec = mkILTySpec(tref,genericArgs)
+        if st.PUntaint((fun st -> st.IsValueType),m) then 
+            ILType.Value tspec 
+        else 
+            mkILBoxedType tspec
+
+/// Import a provided type as an F# type.
+let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:Tainted<ProvidedType>) = 
+
+    let g = env.g
+    if st.PUntaint((fun st -> st.IsArray),m) then 
+        let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))
+        mkArrayTy g (st.PUntaint((fun st -> st.GetArrayRank()),m))  elemTy m
+    elif st.PUntaint((fun st -> st.IsByRef),m) then 
+        let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))
+        mkByrefTy g elemTy
+    elif st.PUntaint((fun st -> st.IsPointer),m) then 
+        let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))
+        mkNativePtrType g elemTy
+    else
+
+        // REVIEW: Extension type could try to be its own generic arg (or there could be a type loop)
+        let tcref, genericArgs = 
+            if st.PUntaint((fun st -> st.IsGenericType),m) then 
+                let tcref = ImportProvidedNamedType env m (st.PApply((fun st -> st.GetGenericTypeDefinition()),m))
+                let args = st.PApplyArray((fun st -> st.GetGenericArguments()),"GetGenericArguments",m) |> Array.map (ImportProvidedType env m (* tinst *) ) |> List.ofArray 
+                tcref,args
+            else 
+                let tcref = ImportProvidedNamedType env m st
+                tcref, [] 
+        
+        /// Adjust for the known primitive numeric types that accept units of measure. 
+        let tcref = 
+            if tyconRefEq g tcref g.system_Double_tcref && genericArgs.Length = 1 then g.pfloat_tcr
+            elif tyconRefEq g tcref g.system_Single_tcref && genericArgs.Length = 1 then g.pfloat32_tcr
+            elif tyconRefEq g tcref g.system_Decimal_tcref && genericArgs.Length = 1 then g.pdecimal_tcr
+            elif tyconRefEq g tcref g.system_Int16_tcref && genericArgs.Length = 1 then g.pint16_tcr
+            elif tyconRefEq g tcref g.system_Int32_tcref && genericArgs.Length = 1 then g.pint_tcr
+            elif tyconRefEq g tcref g.system_Int64_tcref && genericArgs.Length = 1 then g.pint64_tcr
+            elif tyconRefEq g tcref g.system_SByte_tcref && genericArgs.Length = 1 then g.pint8_tcr
+            else tcref
+        
+        let tps = tcref.Typars m
+        if tps.Length <> genericArgs.Length then 
+           error(Error(FSComp.SR.impInvalidNumberOfGenericArguments(tcref.CompiledName, tps.Length, genericArgs.Length),m))
+
+        let genericArgs = 
+            (tps,genericArgs) ||> List.map2 (fun tp genericArg ->  
+                if tp.Kind = TyparKind.Measure then  
+                    let rec conv ty = 
+                        match ty with 
+                        | TType_app (tcref,[t1;t2]) when tyconRefEq g tcref g.measureproduct_tcr -> MeasureProd (conv t1, conv t2)
+                        | TType_app (tcref,[t1]) when tyconRefEq g tcref g.measureinverse_tcr -> MeasureInv (conv t1)
+                        | TType_app (tcref,[]) when tyconRefEq g tcref g.measureone_tcr -> MeasureOne 
+                        | TType_app (tcref,[]) when tcref.TypeOrMeasureKind = TyparKind.Measure -> MeasureCon tcref
+                        | TType_app (tcref,_) -> 
+                            errorR(Error(FSComp.SR.impInvalidMeasureArgument1(tcref.CompiledName, tp.Name),m))
+                            MeasureOne
+                        | _ -> 
+                            errorR(Error(FSComp.SR.impInvalidMeasureArgument2(tp.Name),m))
+                            MeasureOne
+
+                    TType_measure (conv genericArg)
+                else
+                    genericArg)
+
+        ImportTyconRefApp env tcref genericArgs
+
+
+/// Import a provided method reference as an Abstract IL method reference
+let ImportProvidedMethodBaseAsILMethodRef (env:ImportMap) (m:range) (mbase: Tainted<ProvidedMethodBase>) = 
+     let tref = ExtensionTyping.GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> mbase.DeclaringType),m), m)
+
+     let mbase = 
+         // Find the formal member corresponding to the called member
+         match mbase.OfType<ProvidedMethodInfo>() with 
+         | Some minfo when 
+                    minfo.PUntaint((fun minfo -> minfo.IsGenericMethod|| minfo.DeclaringType.IsGenericType),m) -> 
+                let declaringType = minfo.PApply((fun minfo -> minfo.DeclaringType),m)
+                let declaringGenericTypeDefn =  
+                    if declaringType.PUntaint((fun t -> t.IsGenericType),m) then 
+                        declaringType.PApply((fun declaringType -> declaringType.GetGenericTypeDefinition()),m)
+                    else 
+                        declaringType
+                let methods = declaringGenericTypeDefn.PApplyArray((fun x -> x.GetMethods()),"GetMethods",m) 
+                let metadataToken = minfo.PUntaint((fun minfo -> minfo.MetadataToken),m)
+                let found = methods |> Array.tryFind (fun x -> x.PUntaint((fun x -> x.MetadataToken),m) = metadataToken) 
+                match found with
+                |   Some found -> found.Coerce(m)
+                |   None -> 
+                        let methodName = minfo.PUntaint((fun minfo -> minfo.Name),m)
+                        let typeName = declaringGenericTypeDefn.PUntaint((fun declaringGenericTypeDefn -> declaringGenericTypeDefn.FullName),m)
+                        error(NumberedError(FSComp.SR.etIncorrectProvidedMethod(ExtensionTyping.DisplayNameOfTypeProvider(minfo.TypeProvider, m),methodName,metadataToken,typeName), m))
+         | _ -> 
+         match mbase.OfType<ProvidedConstructorInfo>() with 
+         | Some cinfo when cinfo.PUntaint((fun x -> x.DeclaringType.IsGenericType),m) -> 
+                let declaringType = cinfo.PApply((fun x -> x.DeclaringType),m)
+                let declaringGenericTypeDefn =  declaringType.PApply((fun x -> x.GetGenericTypeDefinition()),m)
+                // We have to find the uninstantiated formal signature corresponing to this instantiated constructor.
+                // Annoyingly System.Reflection doesn't give us a MetadataToken to compare on, so we have to look by doing
+                // the instantiation and comparing..
+                let found = 
+                    let ctors = declaringGenericTypeDefn.PApplyArray((fun x -> x.GetConstructors()),"GetConstructors",m) 
+                    let actualParameterTypes = 
+                        [ for p in cinfo.PApplyArray((fun x -> x.GetParameters()), "GetParameters",m) do
+                            yield ImportProvidedType env m (p.PApply((fun p -> p.ParameterType),m)) ]
+                    let actualGenericArgs = argsOfAppTy env.g (ImportProvidedType env m declaringType)
+                    ctors |> Array.tryFind (fun ctor -> 
+                       let formalParameterTypesAfterInstantiation = 
+                           [ for p in ctor.PApplyArray((fun x -> x.GetParameters()), "GetParameters",m) do
+                                let ilFormalTy = ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType),m))
+                                yield ImportILType env m actualGenericArgs ilFormalTy ]
+                       (formalParameterTypesAfterInstantiation,actualParameterTypes) ||>  List.lengthsEqAndForall2 (typeEquiv env.g))
+                     
+                match found with
+                |   Some found -> found.Coerce(m)
+                |   None -> 
+                    let typeName = declaringGenericTypeDefn.PUntaint((fun x -> x.FullName),m)
+                    error(NumberedError(FSComp.SR.etIncorrectProvidedConstructor(ExtensionTyping.DisplayNameOfTypeProvider(cinfo.TypeProvider, m),typeName), m))
+         | _ -> mbase
+
+     let rty = 
+         match mbase.OfType<ProvidedMethodInfo>() with 
+         |  Some minfo -> minfo.PApply((fun minfo -> minfo.ReturnType),m)
+         |  None ->
+            match mbase.OfType<ProvidedConstructorInfo>() with
+            | Some _  -> mbase.PApply((fun _ -> ProvidedType.Void),m)
+            | _ -> failwith "unexpected"
+     let genericArity = 
+        if mbase.PUntaint((fun x -> x.IsGenericMethod),m) then 
+            mbase.PUntaint((fun x -> x.GetGenericArguments().Length),m)
+        else 0
+     let callingConv = (if mbase.PUntaint((fun x -> x.IsStatic),m) then ILCallingConv.Static else ILCallingConv.Instance)
+     let parameters = 
+         [ for p in mbase.PApplyArray((fun x -> x.GetParameters()), "GetParameters",m) do
+              yield ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType),m)) ]
+     mkILMethRef (tref, callingConv, mbase.PUntaint((fun x -> x.Name),m), genericArity, parameters, ImportProvidedTypeAsILType env m rty )
+#endif
 
 //-------------------------------------------------------------------------
 // Load an IL assembly into the compiler's internal data structures
@@ -549,11 +549,11 @@ let ImportILAssembly(amap:(unit -> ImportMap),m,auxModuleLoader,sref,sourceDir,f
         let ccuData = 
           { IsFSharp=false;
             UsesFSharp20PlusQuotations=false;
-//#if EXTENSIONTYPING
-//            InvalidateEvent=invalidateCcu;
-//            IsProviderGenerated = false;
-//            ImportProvidedType = (fun ty -> ImportProvidedType (amap()) m ty)
-//#endif
+#if EXTENSIONTYPING
+            InvalidateEvent=invalidateCcu;
+            IsProviderGenerated = false;
+            ImportProvidedType = (fun ty -> ImportProvidedType (amap()) m ty)
+#endif
             QualifiedName= Some sref.QualifiedName;
             Contents = NewCcuContents sref m nm mty ;
             ILScopeRef = sref;
