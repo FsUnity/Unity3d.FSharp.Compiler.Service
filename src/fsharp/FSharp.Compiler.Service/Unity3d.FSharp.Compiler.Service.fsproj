@@ -14,7 +14,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
-    <AssemblyName>FSharp.Compiler.Service</AssemblyName>
+    <AssemblyName>Unity3d.FSharp.Compiler.Service</AssemblyName>
     <NoWarn>$(NoWarn);44;62;9</NoWarn>
     <ProjectGuid>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -42,6 +42,7 @@
     <TargetFSharpCoreVersion>2.3.0.0</TargetFSharpCoreVersion>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\</SolutionDir>
     <TargetFrameworkProfile>Unity Full v3.5</TargetFrameworkProfile>
+    <Name>Unity3d.FSharp.Compiler.Service</Name>
   </PropertyGroup>
   <PropertyGroup>
     <LkgPath>..\..\..\lib\bootstrap\4.0</LkgPath>
@@ -57,12 +58,12 @@
     <DefineConstants>DEBUG; ;CROSS_PLATFORM_COMPILER;BE_SECURITY_TRANSPARENT;EXTENSIBLE_DUMPER;INCLUDE_METADATA_WRITER;COMPILER;NO_STRONG_NAMES</DefineConstants>
     <Optimize>false</Optimize>
     <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
-    <DocumentationFile>..\..\..\bin\$(TargetFrameworkVersion)\FSharp.Compiler.Service.XML</DocumentationFile>
+    <DocumentationFile>..\..\..\bin\v3.5\Unity3d.FSharp.Compiler.Service.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <Optimize>true</Optimize>
-    <DocumentationFile>..\..\..\bin\$(TargetFrameworkVersion)\FSharp.Compiler.Service.XML</DocumentationFile>
-    <DefineConstants>;CROSS_PLATFORM_COMPILER;BE_SECURITY_TRANSPARENT;TYPE_PROVIDER_SECURITY;EXTENSIBLE_DUMPER;INCLUDE_METADATA_WRITER;COMPILER;NO_STRONG_NAMES</DefineConstants>
+    <DocumentationFile>..\..\..\bin\v3.5\Unity3d.FSharp.Compiler.Service.XML</DocumentationFile>
+    <DefineConstants>;CROSS_PLATFORM_COMPILER;BE_SECURITY_TRANSPARENT;EXTENSIBLE_DUMPER;INCLUDE_METADATA_WRITER;COMPILER;NO_STRONG_NAMES</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="InstallationDummyFile.txt">
