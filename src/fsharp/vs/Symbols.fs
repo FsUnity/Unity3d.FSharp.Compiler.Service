@@ -327,7 +327,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     member x.IsArrayType  = 
         isResolved() &&
         isArrayTyconRef cenv.g entity
-//
+
 //    member __.IsProvided  = 
 //        isResolved() &&
 //        entity.IsProvided
@@ -492,7 +492,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         if isUnresolved() then XmlDoc.Empty  |> makeXmlDoc else
         entity.XmlDoc |> makeXmlDoc
 
-    member x.StaticParameters = 
+//    member x.StaticParameters = 
 //        match entity.TypeReprInfo with 
 //        | TProvidedTypeExtensionPoint info -> 
 //            let m = x.DeclarationLocation
@@ -501,7 +501,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 //            let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
 //            [| for p in staticParameters -> FSharpStaticParameter(cenv,  p, m) |]
 //        | _ -> [| |]
-        [| |] |> makeReadOnlyCollection
+//        [| |] |> makeReadOnlyCollection
 
     member __.NestedEntities = 
         if isUnresolved() then makeReadOnlyCollection[] else
@@ -1771,55 +1771,55 @@ and FSharpAttribute(cenv: cenv, attrib: AttribInfo) =
         if entityIsUnresolved attrib.TyconRef then "attribute ???" else "attribute " + attrib.TyconRef.CompiledName + "(...)" 
     
 //and FSharpStaticParameter(cenv,  sp: Tainted< ExtensionTyping.ProvidedParameterInfo >, m) = 
-and FSharpStaticParameter(cenv, sp:ParameterInfo,   m) = 
-    inherit FSharpSymbol(cenv,  
-                         (fun () -> 
-                              protect <| fun () -> 
-//                                let spKind = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
-//                                let nm = sp.PUntaint((fun p -> p.Name), m)
-                                let nm = sp.Name
-                                Item.ArgName((mkSynId m nm, faux_ttype, None))),
-                         (fun _ _ _ -> true))
-
-
-    member __.Name = 
+//and FSharpStaticParameter(cenv, sp:ParameterInfo,   m) = 
+//    inherit FSharpSymbol(cenv,  
+//                         (fun () -> 
+//                              protect <| fun () -> 
+////                                let spKind = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
+////                                let nm = sp.PUntaint((fun p -> p.Name), m)
+//                                let nm = sp.Name
+//                                Item.ArgName((mkSynId m nm, faux_ttype, None))),
+//                         (fun _ _ _ -> true))
+//
+//
+//    member __.Name = 
+////        protect <| fun () -> 
+////            sp.PUntaint((fun p -> p.Name), m)
+//        sp.Name
+//
+//    member __.DeclarationLocation = m
+//
+//    member __.Kind = 
 //        protect <| fun () -> 
-//            sp.PUntaint((fun p -> p.Name), m)
-        sp.Name
-
-    member __.DeclarationLocation = m
-
-    member __.Kind = 
-        protect <| fun () -> 
-//            let typ = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
-            let typ = sp.GetType()
-//            FSharpType(cenv,  typ)
-            FSharpType(cenv, faux_ttype )
-
-    member __.IsOptional = 
-//        protect <| fun () -> sp.PUntaint((fun x -> x.IsOptional), m)
-// UNITYHACK
-        true            
-
-    member __.HasDefaultValue = 
-//        protect <| fun () -> sp.PUntaint((fun x -> x.HasDefaultValue), m)
-// UNITYHACK
-        false
-
-    member __.DefaultValue = 
-//        protect <| fun () -> sp.PUntaint((fun x -> x.RawDefaultValue), m)
-// UNITYHACK
-        None
-
-    override x.Equals(other : obj) =
-        box x === other || 
-        match other with
-        |   :? FSharpStaticParameter as p -> x.Name = p.Name && x.DeclarationLocation = p.DeclarationLocation
-        |   _ -> false
-
-    override x.GetHashCode() = hash x.Name
-    override x.ToString() = 
-        "static parameter " + x.Name 
+////            let typ = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
+//            let typ = sp.GetType()
+////            FSharpType(cenv,  typ)
+//            FSharpType(cenv, faux_ttype )
+//
+//    member __.IsOptional = 
+////        protect <| fun () -> sp.PUntaint((fun x -> x.IsOptional), m)
+//// UNITYHACK
+//        true            
+//
+//    member __.HasDefaultValue = 
+////        protect <| fun () -> sp.PUntaint((fun x -> x.HasDefaultValue), m)
+//// UNITYHACK
+//        false
+//
+//    member __.DefaultValue = 
+////        protect <| fun () -> sp.PUntaint((fun x -> x.RawDefaultValue), m)
+//// UNITYHACK
+//        None
+//
+//    override x.Equals(other : obj) =
+//        box x === other || 
+//        match other with
+//        |   :? FSharpStaticParameter as p -> x.Name = p.Name && x.DeclarationLocation = p.DeclarationLocation
+//        |   _ -> false
+//
+//    override x.GetHashCode() = hash x.Name
+//    override x.ToString() = 
+//        "static parameter " + x.Name 
 
 and FSharpParameter(cenv, typ:TType, topArgInfo:ArgReprInfo, mOpt, isParamArrayArg, isOutArg, isOptionalArg) = 
     inherit FSharpSymbol(cenv,  

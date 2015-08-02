@@ -4,7 +4,7 @@
 open System
 
 [<AutoOpen>]
-module Utilities =
+module Extensions =
     type  Lazy<'T> with
         member self.Force() = self.Value
 

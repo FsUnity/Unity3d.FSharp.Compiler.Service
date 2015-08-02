@@ -37,6 +37,8 @@ open Microsoft.FSharp.Compiler.Nameres
 open Microsoft.FSharp.Compiler.PrettyNaming
 open System
 open System.Collections.Generic
+open Microsoft.FSharp.Control
+open Microsoft.FSharp.Control.LazyExtensions
 
 //#if EXTENSIONTYPING
 //open Microsoft.FSharp.Compiler.ExtensionTyping

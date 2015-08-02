@@ -82,6 +82,73 @@ open System.Runtime.CompilerServices
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
 #endif
 
+[<AutoOpen>]
+// Extension methods to enable functionality on .Net 3.5
+module internal Extensions =
+    open System.Runtime.InteropServices
+    open Microsoft.FSharp.NativeInterop
+
+    #if WIN32
+    [<DllImport("KERNEL32.dll",SetLastError=true)  >]
+    extern bool DoesWin32MethodExist(string moduleName, string methodName)
+
+    [<DllImport("KERNEL32.dll",SetLastError=true, CallingConvention=CallingConvention.Winapi)  >]
+    extern [<MarshalAs(UnmanagedType.Bool)>]
+        bool IsWow64Process([<In>] IntPtr hSourceProcessHandle   ,
+                            [<Out;MarshalAs(UnmanagedType.Bool)>] bool   isWow64)
+
+    [<DllImport("KERNEL32.dll", CharSet=CharSet.Auto, SetLastError=true)>]
+    extern IntPtr GetCurrentProcess() 
+    #endif
+
+    type Environment with
+        static member Is64BitProcess 
+            with get() =
+                #if WIN32
+                    false
+                #else 
+                    true
+                #endif
+        static member Is64BitOperatingSystem
+            with get()  =
+                #if WIN32
+                //let is64bitProcess = IntPtr.Size = 8
+                let mutable isWow64 = false                
+                if DoesWin32MethodExist("Win32Native.KERNEL32","IsWow64Process") then
+                    IsWow64Process(GetCurrentProcess(),isWow64)
+                else
+                    false
+                #else
+                    true
+                #endif
+                    
+                
+                    
+                
+                   
+//                Microsoft.Win32.Registry.LocalMachine.
+//                    Win32Native.DoesWin32MethodExist(Win32Native.KERNEL32, "IsWow64Process")
+//                    Win32Native.IsWow64Process (Win32Native.GetCurrentProcess(), out isWow64)
+//                
+
+//public static bool Is64BitOperatingSystem {
+//            [System.Security.SecuritySafeCritical]
+//            get {
+//                #if WIN32                    
+//                    bool isWow64; // WinXP SP2+ and Win2k3 SP1+
+//                    return Win32Native.DoesWin32MethodExist(Win32Native.KERNEL32, "IsWow64Process")
+//                        && Win32Native.IsWow64Process(Win32Native.GetCurrentProcess(), out isWow64)
+//                        && isWow64;
+//                #else
+//                    // 64-bit programs run only on 64-bit
+//                    //<STRIP>This will have to change for Mac if we add this API to Silverlight</STRIP>
+//                    return true;
+//                #endif
+//            }
+//        }
+
+
+
 
 module internal Utilities = 
     type IAnyToLayoutCall = 
@@ -105,6 +172,8 @@ module internal Utilities =
 #endif
 
     let ignoreAllErrors f = try f() with _ -> ()
+
+
 
 let referencedAssemblies = Dictionary<string, DateTime>()
 

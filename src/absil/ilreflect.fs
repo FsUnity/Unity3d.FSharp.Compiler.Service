@@ -2068,6 +2068,9 @@ let buildModuleFragment cenv emEnv (asmB : AssemblyBuilder) (modB : ModuleBuilde
 // test hook
 //----------------------------------------------------------------------------
 
+
+/// PURPOSEFULLY BROKEN FOR THE SAKE OF COMPILATION WITH .NET UNITY 3.5
+/// collectible will always be ignored
 let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) =
     let filename = assemblyName ^ ".dll"
     let currentDom  = System.AppDomain.CurrentDomain
@@ -2081,7 +2084,9 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) 
     let asmDir  = "."
     let asmName = new AssemblyName()
     asmName.Name <- assemblyName;
-    let asmAccess = if collectible then AssemblyBuilderAccess.RunAndCollect else AssemblyBuilderAccess.RunAndSave
+    // ORIGINAL
+    //let asmAccess = if collectible then AssemblyBuilderAccess.RunAndCollect else AssemblyBuilderAccess.RunAndSave
+    let asmAccess = AssemblyBuilderAccess.RunAndSave
     let asmB = currentDom.DefineDynamicAssemblyAndLog(asmName,asmAccess,asmDir) 
     if not optimize then 
         let daType = typeof<System.Diagnostics.DebuggableAttribute>;
