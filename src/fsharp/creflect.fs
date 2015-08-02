@@ -782,11 +782,11 @@ and ConvType cenv env m typ =
 
     | TType_ucase(UCRef(tcref,_),tyargs) // Note: we erase union case 'types' when converting to quotations
     | TType_app(tcref,tyargs) -> 
-#if EXTENSIONTYPING
-        match TryElimErasableTyconRef cenv m tcref with 
-        | Some baseTy -> ConvType cenv env m baseTy
-        | _ ->  
-#endif
+//#if EXTENSIONTYPING
+//        match TryElimErasableTyconRef cenv m tcref with 
+//        | Some baseTy -> ConvType cenv env m baseTy
+//        | _ ->  
+//#endif
         QP.mkILNamedTy(ConvTyconRef cenv tcref m, ConvTypes cenv env m tyargs)
 
     | TType_fun(a,b)          -> QP.mkFunTy(ConvType cenv env m a,ConvType cenv env m b)
@@ -896,15 +896,15 @@ and ConvDecisionTree cenv env tgs typR x =
 and IsILTypeRefStaticLinkLocal cenv m (tr:ILTypeRef) =
         ignore cenv; ignore m
         match tr.Scope with 
-#if EXTENSIONTYPING
-        | ILScopeRef.Assembly aref 
-            when not cenv.g.isInteractive &&
-                 aref.Name <> cenv.g.sysCcu.AssemblyName && // optimization to avoid this check in the common case
-                 (match cenv.amap.assemblyLoader.LoadAssembly (m,aref) with 
-                  | ResolvedCcu ccu -> ccu.IsProviderGenerated
-                  | UnresolvedCcu _ -> false) 
-            -> true
-#endif
+//#if EXTENSIONTYPING
+//        | ILScopeRef.Assembly aref 
+//            when not cenv.g.isInteractive &&
+//                 aref.Name <> cenv.g.sysCcu.AssemblyName && // optimization to avoid this check in the common case
+//                 (match cenv.amap.assemblyLoader.LoadAssembly (m,aref) with 
+//                  | ResolvedCcu ccu -> ccu.IsProviderGenerated
+//                  | UnresolvedCcu _ -> false) 
+//            -> true
+//#endif
         | _ -> false
 
 // Adjust for static linking information, then convert
@@ -950,26 +950,26 @@ and ConvILType cenv env m ty =
     | ILType.FunctionPointer _ -> wfail(Error(FSComp.SR.crefQuotationsCantContainThisType(), m))
   
 
-#if EXTENSIONTYPING
-and TryElimErasableTyconRef cenv m (tcref:TyconRef) = 
-    match tcref.TypeReprInfo with 
-    // Get the base type
-    | TProvidedTypeExtensionPoint info when info.IsErased -> Some (info.BaseTypeForErased (m, cenv.g.obj_ty))
-    | _ -> None
-#endif
+//#if EXTENSIONTYPING
+//and TryElimErasableTyconRef cenv m (tcref:TyconRef) = 
+//    match tcref.TypeReprInfo with 
+//    // Get the base type
+//    | TProvidedTypeExtensionPoint info when info.IsErased -> Some (info.BaseTypeForErased (m, cenv.g.obj_ty))
+//    | _ -> None
+//#endif
 
 and ConvTyconRef cenv (tcref:TyconRef) m = 
-#if EXTENSIONTYPING
-    match TryElimErasableTyconRef cenv m tcref with 
-    | Some baseTy -> ConvTyconRef cenv (tcrefOfAppTy cenv.g baseTy) m
-    | None ->  
-    match tcref.TypeReprInfo with 
-    | TProvidedTypeExtensionPoint info when not cenv.g.isInteractive && not info.IsErased -> 
-        // Note, generated types are (currently) non-generic
-        let tref = ExtensionTyping.GetILTypeRefOfProvidedType (info.ProvidedType, m)
-        ConvILTypeRefUnadjusted cenv m tref
-    | _ -> 
-#endif
+//#if EXTENSIONTYPING
+//    match TryElimErasableTyconRef cenv m tcref with 
+//    | Some baseTy -> ConvTyconRef cenv (tcrefOfAppTy cenv.g baseTy) m
+//    | None ->  
+//    match tcref.TypeReprInfo with 
+//    | TProvidedTypeExtensionPoint info when not cenv.g.isInteractive && not info.IsErased -> 
+//        // Note, generated types are (currently) non-generic
+//        let tref = ExtensionTyping.GetILTypeRefOfProvidedType (info.ProvidedType, m)
+//        ConvILTypeRefUnadjusted cenv m tref
+//    | _ -> 
+//#endif
     let repr = tcref.CompiledRepresentation
     match repr with 
     | CompiledTypeRepr.ILAsmOpen asm -> 

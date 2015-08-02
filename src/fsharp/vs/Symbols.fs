@@ -31,6 +31,27 @@ open Microsoft.FSharp.Compiler.Pickle
 open Microsoft.FSharp.Compiler.PrettyNaming
 
 [<AutoOpen>]
+// This is a bullshit module holding nonsense data because I have no idea what
+// To do with FSharpStaticParameter at the end of this module
+// This definitely needs to be excised or corrected in the future
+module private Container =
+    let faux_data : TyparData =
+        {
+            typar_id          = Unchecked.defaultof<_>
+            typar_il_name     = Unchecked.defaultof<_>
+            typar_flags       = Unchecked.defaultof<_>
+            typar_stamp       = Unchecked.defaultof<_>
+            typar_xmldoc      = Unchecked.defaultof<_>
+            typar_attribs     = Unchecked.defaultof<_>
+            typar_solution    = Unchecked.defaultof<_>
+            typar_constraints = Unchecked.defaultof<_>
+        }
+    
+    let faux_ttype = TType.TType_var (Typar.New((faux_data)))
+
+
+
+[<AutoOpen>]
 module Impl = 
     let protect f = 
        ErrorLogger.protectAssemblyExplorationF  
@@ -104,9 +125,10 @@ module Impl =
     /// Convert an IL type definition accessibility into an F# accessibility
     let getApproxFSharpAccessibilityOfEntity (entity: EntityRef) = 
         match metadataOfTycon entity.Deref with 
-        | ProvidedTypeMetadata _info -> 
+        // REMOVED FOR UNITY 3.5
+//        | ProvidedTypeMetadata _info -> 
             // This is an approximation - for generative type providers some type definitions can be private.
-            taccessPublic
+//            taccessPublic
 
         | ILTypeMetadata (_,td) -> 
             match td.Access with 
@@ -255,7 +277,9 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     member x.QualifiedName = 
         checkIsResolved()
         let fail() = invalidOp (sprintf "the type '%s' does not have a qualified name" x.LogicalName)
-        if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail()
+        // REMOVED FOR UNITY 3.5
+        //if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail()
+        if entity.IsTypeAbbrev || entity.IsNamespace then fail()
         match entity.CompiledRepresentation with 
         | CompiledTypeRepr.ILAsmNamed(tref,_,_) -> tref.QualifiedName
         | CompiledTypeRepr.ILAsmOpen _ -> fail()
@@ -268,7 +292,9 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     
     member x.TryFullName = 
         if isUnresolved() then None
-        elif entity.IsTypeAbbrev || entity.IsProvidedErasedTycon then None
+        // REMOVED FOR UNITY 3.5
+        //elif entity.IsTypeAbbrev || entity.IsProvidedErasedTycon then None
+        elif entity.IsTypeAbbrev then None
         elif entity.IsNamespace  then Some entity.DemangledModuleOrNamespaceName 
         else
             match entity.CompiledRepresentation with 
@@ -301,27 +327,27 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     member x.IsArrayType  = 
         isResolved() &&
         isArrayTyconRef cenv.g entity
-
-    member __.IsProvided  = 
-        isResolved() &&
-        entity.IsProvided
-
-    member __.IsProvidedAndErased  = 
-        isResolved() &&
-        entity.IsProvidedErasedTycon
-
-    member __.IsStaticInstantiation  = 
-        isResolved() &&
-        entity.IsStaticInstantiationTycon
-
-    member __.IsProvidedAndGenerated  = 
-        isResolved() &&
-        entity.IsProvidedGeneratedTycon
+//
+//    member __.IsProvided  = 
+//        isResolved() &&
+//        entity.IsProvided
+//
+//    member __.IsProvidedAndErased  = 
+//        isResolved() &&
+//        entity.IsProvidedErasedTycon
+//
+//    member __.IsStaticInstantiation  = 
+//        isResolved() &&
+//        entity.IsStaticInstantiationTycon
+//
+//    member __.IsProvidedAndGenerated  = 
+//        isResolved() &&
+//        entity.IsProvidedGeneratedTycon
 
     member __.IsClass = 
         isResolved() &&
         match metadataOfTycon entity.Deref with 
-        | ProvidedTypeMetadata info -> info.IsClass
+//        | ProvidedTypeMetadata info -> info.IsClass
         | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Class)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.Deref.IsFSharpClassTycon
 
@@ -340,7 +366,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     member __.IsDelegate = 
         isResolved() &&
         match metadataOfTycon entity.Deref with 
-        | ProvidedTypeMetadata info -> info.IsDelegate ()
+//        | ProvidedTypeMetadata info -> info.IsDelegate ()
         | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Delegate)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.IsFSharpDelegateTycon
 
@@ -467,15 +493,15 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         entity.XmlDoc |> makeXmlDoc
 
     member x.StaticParameters = 
-        match entity.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> 
-            let m = x.DeclarationLocation
-            let typeBeforeArguments = info.ProvidedType 
-            let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments,provider) -> typeBeforeArguments.GetStaticParameters(provider)), range=m) 
-            let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
-            [| for p in staticParameters -> FSharpStaticParameter(cenv,  p, m) |]
-        | _ -> [| |]
-      |> makeReadOnlyCollection
+//        match entity.TypeReprInfo with 
+//        | TProvidedTypeExtensionPoint info -> 
+//            let m = x.DeclarationLocation
+//            let typeBeforeArguments = info.ProvidedType 
+//            let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments,provider) -> typeBeforeArguments.GetStaticParameters(provider)), range=m) 
+//            let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
+//            [| for p in staticParameters -> FSharpStaticParameter(cenv,  p, m) |]
+//        | _ -> [| |]
+        [| |] |> makeReadOnlyCollection
 
     member __.NestedEntities = 
         if isUnresolved() then makeReadOnlyCollection[] else
@@ -1744,34 +1770,46 @@ and FSharpAttribute(cenv: cenv, attrib: AttribInfo) =
     override __.ToString() = 
         if entityIsUnresolved attrib.TyconRef then "attribute ???" else "attribute " + attrib.TyconRef.CompiledName + "(...)" 
     
-and FSharpStaticParameter(cenv,  sp: Tainted< ExtensionTyping.ProvidedParameterInfo >, m) = 
+//and FSharpStaticParameter(cenv,  sp: Tainted< ExtensionTyping.ProvidedParameterInfo >, m) = 
+and FSharpStaticParameter(cenv, sp:ParameterInfo,   m) = 
     inherit FSharpSymbol(cenv,  
                          (fun () -> 
                               protect <| fun () -> 
-                                let spKind = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
-                                let nm = sp.PUntaint((fun p -> p.Name), m)
-                                Item.ArgName((mkSynId m nm, spKind, None))),
+//                                let spKind = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
+//                                let nm = sp.PUntaint((fun p -> p.Name), m)
+                                let nm = sp.Name
+                                Item.ArgName((mkSynId m nm, faux_ttype, None))),
                          (fun _ _ _ -> true))
 
+
     member __.Name = 
-        protect <| fun () -> 
-            sp.PUntaint((fun p -> p.Name), m)
+//        protect <| fun () -> 
+//            sp.PUntaint((fun p -> p.Name), m)
+        sp.Name
 
     member __.DeclarationLocation = m
 
     member __.Kind = 
         protect <| fun () -> 
-            let typ = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
-            FSharpType(cenv,  typ)
+//            let typ = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
+            let typ = sp.GetType()
+//            FSharpType(cenv,  typ)
+            FSharpType(cenv, faux_ttype )
 
     member __.IsOptional = 
-        protect <| fun () -> sp.PUntaint((fun x -> x.IsOptional), m)
+//        protect <| fun () -> sp.PUntaint((fun x -> x.IsOptional), m)
+// UNITYHACK
+        true            
 
     member __.HasDefaultValue = 
-        protect <| fun () -> sp.PUntaint((fun x -> x.HasDefaultValue), m)
+//        protect <| fun () -> sp.PUntaint((fun x -> x.HasDefaultValue), m)
+// UNITYHACK
+        false
 
     member __.DefaultValue = 
-        protect <| fun () -> sp.PUntaint((fun x -> x.RawDefaultValue), m)
+//        protect <| fun () -> sp.PUntaint((fun x -> x.RawDefaultValue), m)
+// UNITYHACK
+        None
 
     override x.Equals(other : obj) =
         box x === other || 
@@ -1839,7 +1877,7 @@ and FSharpAssembly internal (cenv, ccu: CcuThunk) =
     member __.CodeLocation = ccu.SourceCodeDirectory
     member __.FileName = ccu.FileName
     member __.SimpleName = ccu.AssemblyName 
-    member __.IsProviderGenerated = ccu.IsProviderGenerated
+//    member __.IsProviderGenerated = ccu.IsProviderGenerated
     member __.Contents = FSharpAssemblySignature((if ccu.IsUnresolvedReference then cenv else (new cenv(cenv.g, ccu, cenv.tcImports))),  ccu.Contents.ModuleOrNamespaceType)
                  
     override x.ToString() = x.QualifiedName

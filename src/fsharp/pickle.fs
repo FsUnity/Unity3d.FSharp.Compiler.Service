@@ -639,18 +639,18 @@ let u_nleref st = lookup_uniq st st.inlerefs (u_int st)
 
 #if INCLUDE_METADATA_WRITER
 let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef) = 
-#if EXTENSIONTYPING
-    // Remap references to statically-linked Entity nodes in provider-generated entities to point to the current assembly.
-    // References to these nodes _do_ appear in F# assembly metadata, because they may be public.
-    let nleref = 
-        match nleref.Deref.PublicPath with 
-        | Some pubpath when nleref.Deref.IsProvidedGeneratedTycon -> 
-            if verbose then dprintfn "remapping pickled reference to provider-generated type %s"  nleref.Deref.DisplayNameWithStaticParameters
-            rescopePubPath thisCcu pubpath
-        | _ -> nleref
-#else
+//#if EXTENSIONTYPING
+//    // Remap references to statically-linked Entity nodes in provider-generated entities to point to the current assembly.
+//    // References to these nodes _do_ appear in F# assembly metadata, because they may be public.
+//    let nleref = 
+//        match nleref.Deref.PublicPath with 
+//        | Some pubpath when nleref.Deref.IsProvidedGeneratedTycon -> 
+//            if verbose then dprintfn "remapping pickled reference to provider-generated type %s"  nleref.Deref.DisplayNameWithStaticParameters
+//            rescopePubPath thisCcu pubpath
+//        | _ -> nleref
+//#else
     ignore thisCcu
-#endif
+//#endif
 
     let (NonLocalEntityRef(a,b)) = nleref 
     encode_uniq nlerefTab (encode_ccuref ccuTab a, Array.map (encode_string stringTab) b)
@@ -1672,16 +1672,16 @@ and p_tycon_repr x st =
     | TFsObjModelRepr r        -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
     | TMeasureableRepr ty      -> p_byte 1 st; p_byte 4 st; p_typ ty st; false
     | TNoRepr                  -> p_byte 0 st; false
-#if EXTENSIONTYPING
-    | TProvidedTypeExtensionPoint info -> 
-        if info.IsErased then 
-            // Pickle erased type definitions as a NoRepr
-            p_byte 0 st; false
-        else
-            // Pickle generated type definitions as a TAsmRepr
-            p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(ExtensionTyping.GetILTypeRefOfProvidedType(info.ProvidedType ,range0),emptyILGenericArgs))) st; true
-    | TProvidedNamespaceExtensionPoint _ -> p_byte 0 st; false
-#endif
+//#if EXTENSIONTYPING
+//    | TProvidedTypeExtensionPoint info -> 
+//        if info.IsErased then 
+//            // Pickle erased type definitions as a NoRepr
+//            p_byte 0 st; false
+//        else
+//            // Pickle generated type definitions as a TAsmRepr
+//            p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(ExtensionTyping.GetILTypeRefOfProvidedType(info.ProvidedType ,range0),emptyILGenericArgs))) st; true
+//    | TProvidedNamespaceExtensionPoint _ -> p_byte 0 st; false
+//#endif
     | TILObjModelRepr (_,_,td) -> error (Failure("Unexpected IL type definition"+td.Name))
 
 and p_tycon_objmodel_data x st = 

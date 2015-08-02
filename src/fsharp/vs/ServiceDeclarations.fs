@@ -147,24 +147,24 @@ module internal ItemDescriptionsImpl =
    
     let rangeOfPropInfo preferFlag (pinfo:PropInfo) =
         match pinfo with
-#if EXTENSIONTYPING 
-        |   ProvidedProp(_,pi,_) -> definitionLocationOfProvidedItem pi
-#endif
+//#if EXTENSIONTYPING 
+//        |   ProvidedProp(_,pi,_) -> definitionLocationOfProvidedItem pi
+//#endif
         |   _ -> pinfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
     let rangeOfMethInfo (g:TcGlobals) preferFlag (minfo:MethInfo) = 
         match minfo with
-#if EXTENSIONTYPING 
-        |   ProvidedMeth(_,mi,_,_) -> definitionLocationOfProvidedItem mi
-#endif
+//#if EXTENSIONTYPING 
+//        |   ProvidedMeth(_,mi,_,_) -> definitionLocationOfProvidedItem mi
+//#endif
         |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
         |   _ -> minfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
     let rangeOfEventInfo preferFlag (einfo:EventInfo) = 
         match einfo with
-#if EXTENSIONTYPING 
-        | ProvidedEvent (_,ei,_) -> definitionLocationOfProvidedItem ei
-#endif
+//#if EXTENSIONTYPING 
+//        | ProvidedEvent (_,ei,_) -> definitionLocationOfProvidedItem ei
+//#endif
         | _ -> einfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
       
     let rangeOfUnionCaseInfo preferFlag (ucinfo:UnionCaseInfo) =      
@@ -207,9 +207,9 @@ module internal ItemDescriptionsImpl =
 
     // Provided type definitions do not have a useful F# CCU for the purposes of goto-definition.
     let computeCcuOfTyconRef (tcref:TyconRef) = 
-#if EXTENSIONTYPING
-        if tcref.IsProvided then None else 
-#endif
+//#if EXTENSIONTYPING
+//        if tcref.IsProvided then None else 
+//#endif
         ccuOfTyconRef tcref
 
     let ccuOfMethInfo (g:TcGlobals) (minfo:MethInfo) = 
@@ -363,9 +363,9 @@ module internal ItemDescriptionsImpl =
 
                 Some (ccuFileName,"M:"+actualTypeName+"."+normalizedName+genArity+XmlDocArgsEnc g (formalTypars,fmtps) args)
         | DefaultStructCtor _ -> None
-#if EXTENSIONTYPING
-        | ProvidedMeth _ -> None
-#endif
+//#if EXTENSIONTYPING
+//        | ProvidedMeth _ -> None
+//#endif
 
     let GetXmlDocSigOfValRef g (vref:ValRef) =
         if not vref.IsLocalRef then
@@ -379,9 +379,9 @@ module internal ItemDescriptionsImpl =
 
     let GetXmlDocSigOfProp infoReader m pinfo =
         match pinfo with 
-#if EXTENSIONTYPING
-        | ProvidedProp _ -> None // No signature is possible. If an xml comment existed it would have been returned by PropInfo.XmlDoc in infos.fs
-#endif
+//#if EXTENSIONTYPING
+//        | ProvidedProp _ -> None // No signature is possible. If an xml comment existed it would have been returned by PropInfo.XmlDoc in infos.fs
+//#endif
         | FSProp (g,typ,_,_) as fspinfo -> 
             let tcref = tcrefOfAppTy g typ
             match fspinfo.ArbitraryValRef with 
@@ -1038,9 +1038,9 @@ module internal ItemDescriptionsImpl =
                 sprintf "%s.%s%s" typeString minfo.RawMetadata.Name paramString |> Some
 
             | DefaultStructCtor _  -> None
-#if EXTENSIONTYPING
-            | ProvidedMeth _ -> None
-#endif
+//#if EXTENSIONTYPING
+//            | ProvidedMeth _ -> None
+//#endif
              
         match d with
         | Item.Value vref | Item.CustomBuilder (_,vref) -> getKeywordForValRef vref
@@ -1056,9 +1056,9 @@ module internal ItemDescriptionsImpl =
              match finfo with 
              | ILFieldInfo(tinfo, fdef) -> 
                  (tinfo.TyconRef |> ticksAndArgCountTextOfTyconRef)+"."+fdef.Name |> Some
-#if EXTENSIONTYPING
-             | ProvidedField _ -> None
-#endif
+//#if EXTENSIONTYPING
+//             | ProvidedField _ -> None
+//#endif
         | Item.Types(_,((TType_app(tcref,_)) :: _)) 
         | Item.DelegateCtor(TType_app(tcref,_))
         | Item.FakeInterfaceCtor(TType_app(tcref,_))
@@ -1079,17 +1079,17 @@ module internal ItemDescriptionsImpl =
                 // namespaces from type providers need to be handled separately because they don't have compiled representation
                 // otherwise we'll fail at tast.fs
                 match modref.Deref.TypeReprInfo with
-#if EXTENSIONTYPING                
-                | TProvidedNamespaceExtensionPoint _ -> 
-                    modref.CompilationPathOpt
-                    |> Option.bind (fun path ->
-                        // works similar to generation of xml-docs at tastops.fs, probably too similar
-                        // TODO: check if this code can be implemented using xml-doc generation functionality
-                        let prefix = path.AccessPath |> Seq.map fst |> String.concat "."
-                        let fullName = if prefix = "" then modref.CompiledName else prefix + "." + modref.CompiledName
-                        Some fullName
-                        )
-#endif
+//#if EXTENSIONTYPING                
+//                | TProvidedNamespaceExtensionPoint _ -> 
+//                    modref.CompilationPathOpt
+//                    |> Option.bind (fun path ->
+//                        // works similar to generation of xml-docs at tastops.fs, probably too similar
+//                        // TODO: check if this code can be implemented using xml-doc generation functionality
+//                        let prefix = path.AccessPath |> Seq.map fst |> String.concat "."
+//                        let fullName = if prefix = "" then modref.CompiledName else prefix + "." + modref.CompiledName
+//                        Some fullName
+//                        )
+//#endif
                 | _ -> modref.Deref.CompiledRepresentationForNamedType.FullName |> Some
             | [] ->  None // Pathological case of the above
 
@@ -1107,9 +1107,9 @@ module internal ItemDescriptionsImpl =
                 let tcref = tinfo.TyconRef
                 (tcref |> ticksAndArgCountTextOfTyconRef)+"."+pdef.Name |> Some
             | FSProp _ -> None
-#if EXTENSIONTYPING
-            | ProvidedProp _ -> None
-#endif
+//#if EXTENSIONTYPING
+//            | ProvidedProp _ -> None
+//#endif
         | Item.Property(_,[]) -> None // Pathological case of the above
                    
         | Item.Event einfo -> 
@@ -1127,9 +1127,9 @@ module internal ItemDescriptionsImpl =
                         (tcref |> ticksAndArgCountTextOfTyconRef)+"."+vref.PropertyName|> Some                     
                    | ParentNone -> None
                 | None -> None
-#if EXTENSIONTYPING
-            | ProvidedEvent _ -> None 
-#endif
+//#if EXTENSIONTYPING
+//            | ProvidedEvent _ -> None 
+//#endif
         | Item.CtorGroup(_,minfos) ->
             match minfos with 
             | [] -> None
@@ -1145,9 +1145,9 @@ module internal ItemDescriptionsImpl =
             | (DefaultStructCtor (g,typ) :: _) ->  
                 let tcref = tcrefOfAppTy g typ
                 (ticksAndArgCountTextOfTyconRef tcref) + ".#ctor" |> Some
-#if EXTENSIONTYPING
-            | ProvidedMeth _::_ -> None
-#endif
+//#if EXTENSIONTYPING
+//            | ProvidedMeth _::_ -> None
+//#endif
         | Item.CustomOperation (_,_,Some minfo) -> getKeywordForMethInfo minfo
         | Item.MethodGroup(_,minfo :: _) -> getKeywordForMethInfo minfo
         | Item.SetterArg (_, propOrField) -> GetF1Keyword propOrField 
@@ -1193,10 +1193,10 @@ module internal ItemDescriptionsImpl =
                 | ILTypeDefKind.Other _ -> iIconGroupTypedef
             | TAsmRepr _ -> iIconGroupTypedef
             | TMeasureableRepr _-> iIconGroupTypedef   // $$$$ TODO: glyph for units-of-measure
-#if EXTENSIONTYPING
-            | TProvidedTypeExtensionPoint _-> iIconGroupTypedef 
-            | TProvidedNamespaceExtensionPoint  _-> iIconGroupTypedef  
-#endif
+//#if EXTENSIONTYPING
+//            | TProvidedTypeExtensionPoint _-> iIconGroupTypedef 
+//            | TProvidedNamespaceExtensionPoint  _-> iIconGroupTypedef  
+//#endif
             | TNoRepr -> iIconGroupClass  // $$$$ TODO: glyph for abstract (no-representation) types
          
          /// Find the glyph for the given type representation.

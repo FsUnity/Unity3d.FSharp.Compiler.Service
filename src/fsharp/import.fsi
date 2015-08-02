@@ -5,9 +5,9 @@ module internal Microsoft.FSharp.Compiler.Import
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.AbstractIL.IL
-#if EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
-#endif
+//#if EXTENSIONTYPING
+//open Microsoft.FSharp.Compiler.ExtensionTyping
+//#endif
 
 
 
@@ -18,15 +18,15 @@ type AssemblyLoader =
     /// Resolve an Abstract IL assembly reference to a Ccu
     abstract LoadAssembly : range * ILAssemblyRef -> CcuResolutionResult
 
-#if EXTENSIONTYPING
-    /// Get a flag indicating if an assembly is a provided assembly, plus the
-    /// table of information recording remappings from type names in the provided assembly to type
-    /// names in the statically linked, embedded assembly.
-    abstract GetProvidedAssemblyInfo : range * Tainted<ProvidedAssembly> -> bool * ProvidedAssemblyStaticLinkingMap option
-
-    /// Record a root for a [<Generate>] type to help guide static linking & type relocation
-    abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
-#endif
+//#if EXTENSIONTYPING
+//    /// Get a flag indicating if an assembly is a provided assembly, plus the
+//    /// table of information recording remappings from type names in the provided assembly to type
+//    /// names in the statically linked, embedded assembly.
+//    abstract GetProvidedAssemblyInfo : range * Tainted<ProvidedAssembly> -> bool * ProvidedAssemblyStaticLinkingMap option
+//
+//    /// Record a root for a [<Generate>] type to help guide static linking & type relocation
+//    abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
+//#endif
 
 
 /// Represents a context used for converting AbstractIL .NET and provided types to F# internal compiler data structures.
@@ -57,20 +57,20 @@ val internal ImportILType : ImportMap -> range -> TType list -> ILType -> TType
 /// Pre-check for ability to import an IL type as an F# type.
 val internal CanImportILType : ImportMap -> range -> ILType -> bool
 
-#if EXTENSIONTYPING
-
-/// Import a provided type as an F# type.
-val internal ImportProvidedType : ImportMap -> range -> (* TType list -> *) Tainted<ProvidedType> -> TType
-
-/// Import a provided type reference as an F# type TyconRef
-val internal ImportProvidedNamedType : ImportMap -> range -> (* TType list -> *) Tainted<ProvidedType> -> TyconRef
-
-/// Import a provided type as an AbstractIL type
-val internal ImportProvidedTypeAsILType : ImportMap -> range -> Tainted<ProvidedType> -> ILType
-
-/// Import a provided method reference as an Abstract IL method reference
-val internal ImportProvidedMethodBaseAsILMethodRef : ImportMap -> range -> Tainted<ProvidedMethodBase> -> ILMethodRef
-#endif
+//#if EXTENSIONTYPING
+//
+///// Import a provided type as an F# type.
+//val internal ImportProvidedType : ImportMap -> range -> (* TType list -> *) Tainted<ProvidedType> -> TType
+//
+///// Import a provided type reference as an F# type TyconRef
+//val internal ImportProvidedNamedType : ImportMap -> range -> (* TType list -> *) Tainted<ProvidedType> -> TyconRef
+//
+///// Import a provided type as an AbstractIL type
+//val internal ImportProvidedTypeAsILType : ImportMap -> range -> Tainted<ProvidedType> -> ILType
+//
+///// Import a provided method reference as an Abstract IL method reference
+//val internal ImportProvidedMethodBaseAsILMethodRef : ImportMap -> range -> Tainted<ProvidedMethodBase> -> ILMethodRef
+//#endif
 
 /// Import a set of Abstract IL generic parameter specifications as a list of new F# generic parameters.  
 val internal ImportILGenericParameters : (unit -> ImportMap) -> range -> ILScopeRef -> TType list -> ILGenericParameterDef list -> Typar list
