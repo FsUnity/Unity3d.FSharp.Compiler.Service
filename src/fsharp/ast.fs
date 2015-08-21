@@ -94,8 +94,8 @@ type XmlDoc =
                 let lineAT = lineA.TrimStart([|' '|])
                 if lineAT = "" then processLines rest
                 else if String.hasPrefix lineAT "<" then lines
-                else ["<summary>"] @
-#if SILVERLIGHT
+                else ["<summary>"] @     
+#if FX_NO_SECURITY_ELEMENT_ESCAPE
                      lines @
 #else        
                      (lines |> List.map (fun line -> System.Security.SecurityElement.Escape(line))) @
@@ -2079,20 +2079,20 @@ and LexCont = LexerWhitespaceContinuation
 /// The error raised by the parse_error_rich function, which is called by the parser engine
 /// when a syntax error occurs. The first object is the ParseErrorContext which contains a dump of
 /// information about the grammar at the point where the error occured, e.g. what tokens
-/// are valid to shift next at that point in the grammar. This information is processed in build.fs.
+/// are valid to shift next at that point in the grammar. This information is processed in CompileOps.fs.
 [<NoEquality; NoComparison>]
 exception SyntaxError of obj (* ParseErrorContext<_> *) * range
 
 /// Get an F# compiler position from a lexer position
-let posOfLexPosition (p:Position) = 
+let internal posOfLexPosition (p:Position) = 
     mkPos p.Line p.Column
 
 /// Get an F# compiler range from a lexer range
-let mkSynRange (p1:Position) (p2: Position) = 
+let internal mkSynRange (p1:Position) (p2: Position) = 
     mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
 
 type LexBuffer<'Char> with 
-    member lexbuf.LexemeRange  = mkSynRange lexbuf.StartPos lexbuf.EndPos
+    member internal lexbuf.LexemeRange  = mkSynRange lexbuf.StartPos lexbuf.EndPos
 
 /// Get the range corresponding to the result of a grammar rule while it is being reduced
 let internal lhs (parseState: IParseState) = 
@@ -2129,11 +2129,11 @@ module LexbufLocalXmlDocStore =
     // The key into the BufferLocalStore used to hold the current accumulated XmlDoc lines 
     let private xmlDocKey = "XmlDoc"
 
-    let ClearXmlDoc (lexbuf:Lexbuf) = 
+    let internal ClearXmlDoc (lexbuf:Lexbuf) = 
         lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
 
     /// Called from the lexer to save a single line of XML doc comment.
-    let SaveXmlDocLine (lexbuf:Lexbuf, lineText, pos) = 
+    let internal SaveXmlDocLine (lexbuf:Lexbuf, lineText, pos) = 
         if not (lexbuf.BufferLocalStore.ContainsKey(xmlDocKey)) then 
             lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
         let collector = unbox<XmlDocCollector>(lexbuf.BufferLocalStore.[xmlDocKey])
@@ -2141,7 +2141,7 @@ module LexbufLocalXmlDocStore =
 
     /// Called from the parser each time we parse a construct that marks the end of an XML doc comment range,
     /// e.g. a 'type' declaration. The markerRange is the range of the keyword that delimits the construct.
-    let GrabXmlDocBeforeMarker (lexbuf:Lexbuf, markerRange:range)  = 
+    let internal GrabXmlDocBeforeMarker (lexbuf:Lexbuf, markerRange:range)  = 
         if lexbuf.BufferLocalStore.ContainsKey(xmlDocKey) then 
             PreXmlDoc.CreateFromGrabPoint(unbox<XmlDocCollector>(lexbuf.BufferLocalStore.[xmlDocKey]),markerRange.End)
         else

@@ -7,7 +7,7 @@ let DateTime1970Jan01 = new System.DateTime(1970,1,1,0,0,0,System.DateTimeKind.U
 let absilWriteGetTimeStamp () = (System.DateTime.UtcNow - DateTime1970Jan01).TotalSeconds |> int
 
 
-#if SILVERLIGHT
+#if NO_PDB_READER
 type PdbReader = | NeverImplemented
 let pdbReadClose (_pdb:PdbReader) = ()
 type PdbWriter = | NeverImplemented
@@ -1195,8 +1195,8 @@ let pdbReadOpen (moduleName:string) (path:string) :  PdbReader =
         with _ ->  
             { symReader = null } 
 #else 
-        let symbolBinder = new System.Diagnostics.SymbolStore.SymBinder() 
-        { symReader = symbolBinder.GetReader(importerPtr, moduleName, path) } 
+        let symbolBinder = new System.Diagnostics.SymbolStore.SymBinder()
+        { symReader = symbolBinder.GetReader(importerPtr, moduleName, path) }
 #endif
     finally
         // Marshal.GetComInterfaceForObject adds an extra ref for importerPtr

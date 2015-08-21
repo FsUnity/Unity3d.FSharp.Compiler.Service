@@ -107,7 +107,7 @@ type BinaryFile() =
     abstract CountUtf8String : addr:int -> int
     abstract ReadUTF8String : addr: int -> string
 
-#if SILVERLIGHT
+#if FX_NO_NATIVE_MEMORY_MAPPED_FILES
 
 #else
 
@@ -947,6 +947,7 @@ type ILReaderContext =
     userStringsStreamPhysicalLoc: int32;
     stringsStreamPhysicalLoc: int32;
     blobsStreamPhysicalLoc: int32;
+    blobsStreamSize: int32;
     readUserStringHeap: (int32 -> string);
     memoizeString: string -> string;
     readStringHeap: (int32 -> string);
@@ -1422,9 +1423,13 @@ let readStringHeapUncached ctxtH idx =
 let readStringHeap          ctxt idx = ctxt.readStringHeap idx 
 let readStringHeapOption   ctxt idx = if idx = 0 then None else Some (readStringHeap ctxt idx) 
 
+let emptyByteArray: byte[] = [||]
 let readBlobHeapUncached ctxtH idx = 
     let ctxt = getHole ctxtH
-    seekReadBlob ctxt.is (ctxt.blobsStreamPhysicalLoc + idx) 
+    // valid index lies in range [1..streamSize)
+    // NOTE: idx cannot be 0 - Blob\String heap has first empty element that is one byte 0
+    if idx <= 0 || idx >= ctxt.blobsStreamSize then emptyByteArray
+    else seekReadBlob ctxt.is (ctxt.blobsStreamPhysicalLoc + idx) 
 let readBlobHeap        ctxt idx = ctxt.readBlobHeap idx 
 let readBlobHeapOption ctxt idx = if idx = 0 then None else Some (readBlobHeap ctxt idx) 
 
@@ -2527,7 +2532,7 @@ and seekReadCustomAttr ctxt (TaggedIndex(cat,idx),b) =
 and seekReadCustomAttrUncached ctxtH (CustomAttrIdx (cat,idx,valIdx)) = 
     let ctxt = getHole ctxtH
     { Method=seekReadCustomAttrType ctxt (TaggedIndex(cat,idx));
-#if SILVERLIGHT
+#if FX_REFLECTION_EMITS_CUSTOM_ATTRIBUTES_USING_BUILDER
       Arguments = [], []
 #endif
       Data=
@@ -3864,6 +3869,7 @@ let rec genOpenBinaryReader infile is opts =
                  userStringsStreamPhysicalLoc   = userStringsStreamPhysicalLoc;
                  stringsStreamPhysicalLoc       = stringsStreamPhysicalLoc;
                  blobsStreamPhysicalLoc         = blobsStreamPhysicalLoc;
+                 blobsStreamSize                = blobsStreamSize;
                  memoizeString                  = Tables.memoize id;
                  readUserStringHeap             = cacheUserStringHeap (readUserStringHeapUncached ctxtH);
                  readStringHeap                 = cacheStringHeap (readStringHeapUncached ctxtH);
@@ -3969,7 +3975,7 @@ let ClosePdbReader pdb =
 
 let OpenILModuleReader infile opts = 
 
-#if SILVERLIGHT
+#if FX_NO_NATIVE_MEMORY_MAPPED_FILES
 #else
    try 
         let mmap = MemoryMappedFile.Create infile

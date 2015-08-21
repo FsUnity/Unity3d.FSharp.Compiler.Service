@@ -19,10 +19,10 @@ open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.QuotationTranslator
-open Microsoft.FSharp.Compiler.Typrelns
+open Microsoft.FSharp.Compiler.TypeRelations
 
 
 [<AutoOpen>]
@@ -379,7 +379,7 @@ module FSharpExprConvert =
 
     and ConvExprPrim (cenv:Impl.cenv) (env:ExprTranslationEnv) expr = 
         // Eliminate integer 'for' loops 
-        let expr = DetectFastIntegerForLoops cenv.g expr
+        let expr = DetectAndOptimizeForExpression cenv.g OptimizeIntRangesOnly expr
 
         // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
         // complete inference types.
@@ -448,7 +448,7 @@ module FSharpExprConvert =
             ConvExprPrim cenv env x
 
         | Expr.TyChoose _  -> 
-            ConvExprPrim cenv env (Typrelns.ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
+            ConvExprPrim cenv env (ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
 
         | Expr.Obj (_lambdaId,typ,_basev,basecall,overrides, iimpls,_m)      -> 
             let basecallR = ConvExpr cenv env basecall

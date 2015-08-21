@@ -12,3 +12,4 @@ nuget FAKE
 nuget FSharp.Formatting
 nuget SourceLink.Fake
 nuget TaskParallelLibrary
+github fsharp/FAKE modules/Octokit/Octokit.fsx

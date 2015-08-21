@@ -20,18 +20,18 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.PrettyNaming
 
-open Microsoft.FSharp.Compiler.Env 
+open Microsoft.FSharp.Compiler.TcGlobals 
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Build
+open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Nameres
+open Microsoft.FSharp.Compiler.NameResolution
 open ItemDescriptionIcons 
 
 module EnvMisc2 =
@@ -135,13 +135,13 @@ module internal ItemDescriptionsImpl =
     let rangeOfValRef preferFlag (vref:ValRef) =
         match preferFlag with 
         | None -> vref.Range 
-        | Some false -> vref.ImplRange 
+        | Some false -> vref.DefinitionRange 
         | Some true -> vref.SigRange
 
     let rangeOfEntityRef preferFlag (eref:EntityRef) =
         match preferFlag with 
         | None -> eref.Range 
-        | Some false -> eref.ImplRange 
+        | Some false -> eref.DefinitionRange 
         | Some true -> eref.SigRange
 
    
@@ -170,13 +170,13 @@ module internal ItemDescriptionsImpl =
     let rangeOfUnionCaseInfo preferFlag (ucinfo:UnionCaseInfo) =      
         match preferFlag with 
         | None -> ucinfo.UnionCase.Range 
-        | Some false -> ucinfo.UnionCase.ImplRange 
+        | Some false -> ucinfo.UnionCase.DefinitionRange 
         | Some true -> ucinfo.UnionCase.SigRange
 
     let rangeOfRecdFieldInfo preferFlag (rfinfo:RecdFieldInfo) =      
         match preferFlag with 
         | None -> rfinfo.RecdField.Range 
-        | Some false -> rfinfo.RecdField.ImplRange 
+        | Some false -> rfinfo.RecdField.DefinitionRange 
         | Some true -> rfinfo.RecdField.SigRange
 
     let rec rangeOfItem (g:TcGlobals) preferFlag d = 

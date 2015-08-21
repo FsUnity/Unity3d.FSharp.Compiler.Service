@@ -6,23 +6,38 @@ open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Build
-open Microsoft.FSharp.Compiler.Env
-
-//----------------------------------------------------------------------------
-// Public helpers - entry point for fsc.exe
-
-type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string option * (*container:*) string option
+open Microsoft.FSharp.Compiler.CompileOps
+open Microsoft.FSharp.Compiler.TcGlobals
+open Microsoft.FSharp.Compiler.Tast
+open Microsoft.FSharp.Compiler.TypeChecker
 
 [<AbstractClass>]
 type ErrorLoggerProvider =
     new : unit -> ErrorLoggerProvider
     abstract CreateErrorLoggerThatQuitsAfterMaxErrors : tcConfigBuilder : TcConfigBuilder * exiter : Exiter -> ErrorLogger
 
+/// The F# project system calls this to pop up type provider security dialog if needed
+val internal ProcessCommandLineArgsAndImportAssemblies : (string -> unit) * string[] * string * string * Exiter -> unit
+
 #if NO_COMPILER_BACKEND
 #else
-/// <summary>fsc.exe calls this</summary>
-/// A global variable representing a parameter used to configure the compilation service.
+
+type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string option * (*container:*) string option
+
+val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemapping:Tastops.Remap * generatedCcu: Tast.CcuThunk * outfile: string -> ILAttribute list * ILResource list
+val ValidateKeySigningAttributes : tcConfig:TcConfig * tcGlobals:TcGlobals * TypeChecker.TopAttribs -> SigningInfo
+val GetSigner : SigningInfo -> ILBinaryWriter.ILStrongNameSigner option
+
+type ILResource with 
+    /// Read the bytes from a resource local to an assembly
+    member internal Bytes : byte[]
+
+/// Proccess the given set of command line arguments
+val internal ProcessCommandLineFlags : TcConfigBuilder * argv:string[] -> string list
+
+//---------------------------------------------------------------------------
+// The entry point used by fsc.exe
+
 val mainCompile : 
     argv: string[] * 
     bannerAlreadyPrinted: bool * 
@@ -48,25 +63,17 @@ val compileOfAst :
     dynamicAssemblyCreator: (TcConfig * ILGlobals * ErrorLogger * string * string option * ILModuleDef * SigningInfo -> unit) option
       -> unit
 
-val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemapping:Tastops.Remap * generatedCcu: Tast.CcuThunk * outfile: string -> ILAttribute list * ILResource list
-val ValidateKeySigningAttributes : tcConfig:TcConfig -> tcGlobals:TcGlobals -> TypeChecker.TopAttribs -> SigningInfo
-val GetSigner : SigningInfo -> ILBinaryWriter.ILStrongNameSigner option
+//---------------------------------------------------------------------------
+// The micro API into the compiler used by the visualfsharp test infrastructure
 
-//----------------------------------------------------------------------------
-// Internal helpers used to implement the SimpleCodeServices API
+[<RequireQualifiedAccess>]
+type CompilationOutput = 
+    { Errors : ErrorOrWarning[]
+      Warnings : ErrorOrWarning[] }
 
-type ILResource with 
-    /// Read the bytes from a resource local to an assembly
-    member internal Bytes : byte[]
+type InProcCompiler = 
+    new : unit -> InProcCompiler
+    member Compile : args : string[] -> bool * CompilationOutput
 
-
-//----------------------------------------------------------------------------
-/// Internal helpers used to implement the Visual Studio hosted CodeServices API.
-///
-/// The F# project system calls this to pop up type provider security dialog if needed.
-val internal runFromCommandLineToImportingAssemblies : (string -> unit) * string[] * string * string * Exiter -> unit
-
-/// Proccess the given set of command line arguments
-val internal ProcessCommandLineFlags : TcConfigBuilder * argv:string[] -> string list
 
 #endif
