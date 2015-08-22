@@ -11,6 +11,9 @@ open System.Collections.Generic
 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.TcGlobals
+open Microsoft.FSharp.Compiler.NameResolution
+open Microsoft.FSharp.Compiler.CompileOps
 
 /// Represents one parameter for one method (or other item) in a group. 
 [<Sealed>]
@@ -101,7 +104,7 @@ type FSharpProjectContext =
 [<Sealed>]
 type FSharpSymbolUse = 
     // For internal use only
-    internal new : g:Env.TcGlobals * denv: Tastops.DisplayEnv * symbol:FSharpSymbol * itemOcc:Nameres.ItemOccurence * range: range -> FSharpSymbolUse
+    internal new : g:TcGlobals * denv: Tastops.DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
 
     /// The symbol referenced
     member Symbol : FSharpSymbol 
@@ -208,7 +211,7 @@ type FSharpCheckFileResults =
     /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location.</param>
+    /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
     member GetToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> Async<ToolTipText>
 
     /// <summary>Compute the Visual Studio F1-help key identifier for the given location, based on name resolution results</summary>
@@ -695,7 +698,7 @@ type FSharpChecker =
 // An object to typecheck source in a given typechecking environment.
 // Used internally to provide intellisense over F# Interactive.
 type internal FsiInteractiveChecker =
-    internal new : ops: IReactorOperations * tcConfig: Build.TcConfig * tcGlobals: Env.TcGlobals * tcImports: Build.TcImports * tcState: Build.TcState * loadClosure: Build.LoadClosure option ->  FsiInteractiveChecker 
+    internal new : ops: IReactorOperations * tcConfig: TcConfig * tcGlobals: TcGlobals * tcImports: TcImports * tcState: TcState * loadClosure: LoadClosure option ->  FsiInteractiveChecker 
     member internal ParseAndCheckInteraction : source:string -> FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults
 
 /// Information about the compilation environment

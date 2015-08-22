@@ -473,6 +473,7 @@ module Dictionary =
 
 // FUTURE CLEANUP: remove this adhoc collection
 type Hashset<'T> = Dictionary<'T,int>
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Hashset = 
     let create (n:int) = new Hashset<'T>(n, HashIdentity.Structural)
@@ -516,6 +517,28 @@ type ResultOrException<'TResult> =
     | Result of 'TResult
     | Exception of System.Exception
                      
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module ResultOrException = 
+
+    let success a = Result a
+    let raze (b:exn) = Exception b
+
+    // map
+    let (|?>) res f = 
+        match res with 
+        | Result x -> Result(f x )
+        | Exception err -> Exception err
+  
+    let ForceRaise res = 
+        match res with 
+        | Result x -> x
+        | Exception err -> raise err
+
+    let otherwise f x =
+        match x with 
+        | Result x -> success x
+        | Exception _err -> f()
+
 
 //-------------------------------------------------------------------------
 // Library: extensions to flat list  (immutable arrays)
@@ -616,7 +639,7 @@ module Eventually =
     let force e = Option.get (forceWhile (fun () -> true) e)
         
     /// Keep running the computation bit by bit until a time limit is reached.
-#if SILVERLIGHT
+#if FX_NO_SYSTEM_DIAGNOSTICS_STOPWATCH
     // There is no Stopwatch on Silverlight, so use DateTime.Now. I'm not sure of the pros and cons of this.
     // An alternative is just to always force the computation all the way to the end.
     //let repeatedlyProgressUntilDoneOrTimeShareOver _timeShareInMilliseconds runner e = 
@@ -978,7 +1001,7 @@ module Shim =
         abstract AssemblyLoadFrom: fileName:string -> System.Reflection.Assembly 
         abstract AssemblyLoad: assemblyName:System.Reflection.AssemblyName -> System.Reflection.Assembly 
 
-#if SILVERLIGHT
+#if FX_FILE_SYSTEM_USES_ISOLATED_STORAGE
     open System.IO.IsolatedStorage
     open System.Windows
     open System
@@ -1093,7 +1116,7 @@ module Shim =
 
     type System.Text.Encoding with 
         static member GetEncodingShim(n:int) = 
-#if SILVERLIGHT
+#if FX_NO_GET_ENCODING_BY_INTEGER
                 System.Text.Encoding.GetEncoding(n.ToString())
 #else                
                 System.Text.Encoding.GetEncoding(n)

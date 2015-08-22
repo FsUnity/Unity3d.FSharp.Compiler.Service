@@ -10,6 +10,7 @@ open Fake.AppVeyor
 open Fake
 open Fake.Git
 open Fake.ReleaseNotesHelper
+open Fake.UserInputHelper
 open Fake.AssemblyInfoFile
 open SourceLink
 
@@ -27,7 +28,9 @@ let description = """
   interactive service that can be used for embedding F# scripting into your applications."""
 let tags = "F# fsharp interactive compiler editor"
 
-let gitHome = "https://github.com/fsharp"
+let gitOwner = "fsharp"
+let gitHome = "https://github.com/" + gitOwner
+
 let gitName = "FSharp.Compiler.Service"
 let gitRaw = environVarOrDefault "gitRaw" "https://raw.githubusercontent.com/fsharp"
 
@@ -37,6 +40,8 @@ let netFrameworks = ["v3.5"]
 // --------------------------------------------------------------------------------------
 // The rest of the code is standard F# build script 
 // --------------------------------------------------------------------------------------
+
+let buildDir = "bin"
 
 // Read release notes & version info from RELEASE_NOTES.md
 let release = LoadReleaseNotes (__SOURCE_DIRECTORY__ + "/RELEASE_NOTES.md")
@@ -57,27 +62,17 @@ Target "BuildVersion" (fun _ ->
 // Generate assembly info files with the right version & up-to-date information
 Target "AssemblyInfo" (fun _ ->
     let fileName = "src/assemblyinfo/assemblyinfo.shared.fs"
-    // add json info to the informational version
-    let iv = Text.StringBuilder() // json
-    iv.Appendf "{\\\"buildVersion\\\":\\\"%s\\\"" buildVersion
-    iv.Appendf ",\\\"buildDate\\\":\\\"%s\\\"" (buildDate.ToString "yyyy'-'MM'-'dd'T'HH':'mm':'sszzz")
-    if isAppVeyorBuild then
-        iv.Appendf ",\\\"gitCommit\\\":\\\"%s\\\"" AppVeyor.AppVeyorEnvironment.RepoCommit
-        iv.Appendf ",\\\"gitBranch\\\":\\\"%s\\\"" AppVeyor.AppVeyorEnvironment.RepoBranch
-    iv.Appendf "}"
     CreateFSharpAssemblyInfo fileName
           [ Attribute.Version assemblyVersion
             Attribute.FileVersion assemblyVersion
-            Attribute.InformationalVersion iv.String ]
+            Attribute.InformationalVersion assemblyVersion ]
 )
 
 // --------------------------------------------------------------------------------------
 // Clean build results & restore NuGet packages
 
-Target "RestorePackages" RestorePackages
-
 Target "Clean" (fun _ ->
-    CleanDirs ["bin" ]
+    CleanDirs [ buildDir ]
 )
 
 Target "CleanDocs" (fun _ ->
@@ -90,7 +85,7 @@ Target "CleanDocs" (fun _ ->
 Target "GenerateFSIStrings" (fun _ -> 
     // Generate FSIStrings using the FSSrGen tool
     execProcess (fun p -> 
-      let dir = __SOURCE_DIRECTORY__ @@ "src/fsharp/fsi"
+      let dir = __SOURCE_DIRECTORY__ </> "src/fsharp/fsi"
       p.Arguments <- "FSIstrings.txt FSIstrings.fs FSIstrings.resx"
       p.WorkingDirectory <- dir
       p.FileName <- !! "lib/bootstrap/4.0/fssrgen.exe" |> Seq.head ) TimeSpan.MaxValue
@@ -100,7 +95,7 @@ Target "GenerateFSIStrings" (fun _ ->
 Target "Build" (fun _ ->
     netFrameworks
     |> List.iter (fun framework -> 
-        let outputPath = "bin/" + framework
+        let outputPath = buildDir </> framework
         !! (project + ".sln")
         |> MSBuild outputPath "Build" ["Configuration","Release"; "TargetFrameworkVersion", framework]
         |> Log (".NET " + framework + " Build-Output: "))
@@ -121,7 +116,7 @@ Target "SourceLink" (fun _ ->
     #else
     netFrameworks
     |> List.iter (fun framework -> 
-        let outputPath = __SOURCE_DIRECTORY__ @@ "bin/" + framework
+        let outputPath = __SOURCE_DIRECTORY__ </> buildDir </> framework
         let proj = VsProj.Load "src/fsharp/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj"
                         ["Configuration","Release"; "TargetFrameworkVersion",framework; "OutputPath",outputPath]
         let sourceFiles = 
@@ -158,7 +153,7 @@ Target "RunTests" (fun _ ->
 
 Target "NuGet" (fun _ ->
     NuGet (fun p -> 
-        { p with   
+        { p with 
             Authors = authors
             Project = project
             Summary = summary
@@ -166,7 +161,7 @@ Target "NuGet" (fun _ ->
             Version = buildVersion
             ReleaseNotes = release.Notes |> toLines
             Tags = tags
-            OutputPath = "bin"
+            OutputPath = buildDir
             AccessKey = getBuildParamOrDefault "nugetkey" ""
             Publish = hasBuildParam "nugetkey" })
         ("nuget/" + project + ".nuspec")
@@ -198,7 +193,37 @@ Target "ReleaseDocs" (fun _ ->
     Branches.push "temp/gh-pages"
 )
 
-Target "Release" DoNothing
+#load "paket-files/fsharp/FAKE/modules/Octokit/Octokit.fsx"
+open Octokit
+
+Target "Release" (fun _ ->
+    let user =
+        match getBuildParam "github-user" with
+        | s when not (String.IsNullOrWhiteSpace s) -> s
+        | _ -> getUserInput "Username: "
+    let pw =
+        match getBuildParam "github-pw" with
+        | s when not (String.IsNullOrWhiteSpace s) -> s
+        | _ -> getUserPassword "Password: "
+    let remote =
+        Git.CommandHelper.getGitResult "" "remote -v"
+        |> Seq.filter (fun (s: string) -> s.EndsWith("(push)"))
+        |> Seq.tryFind (fun (s: string) -> s.Contains(gitOwner + "/" + gitName))
+        |> function None -> gitHome + "/" + gitName | Some (s: string) -> s.Split().[0]
+
+    StageAll ""
+    Git.Commit.Commit "" (sprintf "Bump version to %s" release.NugetVersion)
+    Branches.pushBranch "" remote (Information.getBranchName "")
+
+    Branches.tag "" release.NugetVersion
+    Branches.pushTag "" remote release.NugetVersion
+    
+    // release on github
+    createClient user pw
+    |> createDraft gitOwner gitName release.NugetVersion (release.SemVer.PreRelease <> None) release.Notes 
+    |> releaseDraft
+    |> Async.RunSynchronously
+)
 
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
@@ -209,7 +234,6 @@ Target "All" DoNothing
 
 "Clean"
   =?> ("BuildVersion", isAppVeyorBuild)
-  ==> "RestorePackages"
   ==> "AssemblyInfo"
   ==> "GenerateFSIStrings"
   ==> "Prepare"
@@ -227,5 +251,6 @@ Target "All" DoNothing
   ==> "GenerateDocsJa"
   ==> "GenerateDocs"
   ==> "ReleaseDocs"
+  ==> "Release"
 
 RunTargetOrDefault "All"
