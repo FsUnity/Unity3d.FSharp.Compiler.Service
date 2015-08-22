@@ -4692,7 +4692,7 @@ type ILTypeSigParser(tstring : string) =
         reset()
         let ilty = x.ParseType()
         ILAttribElem.Type(Some(ilty))
-
+(*
 let decodeILAttribData ilg (ca: ILAttribute) = 
     let bytes = ca.Data
     let sigptr = 0
@@ -4810,8 +4810,121 @@ let decodeILAttribData ilg (ca: ILAttribute) =
       parseNamed ((nm,ty,isProp,v) :: acc) (n-1) sigptr
     let named = parseNamed [] (int nnamed) sigptr
     fixedArgs,named     
+*)
+let decodeILAttribData ilg (ca: ILAttribute) scope = 
+    let bytes = ca.Data
+    let sigptr = 0
+    let bb0,sigptr = sigptr_get_byte bytes sigptr
+    let bb1,sigptr = sigptr_get_byte bytes sigptr
+    if not (bb0 = 0x01 && bb1 = 0x00) then failwith "decodeILAttribData: invalid data";
 
-
+    let rec parseVal argty sigptr = 
+      match argty with 
+      | ILType.Value tspec when tspec.Name = "System.SByte" ->  
+          let n,sigptr = sigptr_get_i8 bytes sigptr
+          ILAttribElem.SByte n, sigptr
+      | ILType.Value tspec when tspec.Name = "System.Byte" ->  
+          let n,sigptr = sigptr_get_u8 bytes sigptr
+          ILAttribElem.Byte n, sigptr
+      | ILType.Value tspec when tspec.Name = "System.Int16" ->  
+          let n,sigptr = sigptr_get_i16 bytes sigptr
+          ILAttribElem.Int16 n, sigptr
+      | ILType.Value tspec when tspec.Name = "System.UInt16" ->  
+          let n,sigptr = sigptr_get_u16 bytes sigptr
+          ILAttribElem.UInt16 n, sigptr
+      | ILType.Value tspec when tspec.Name = "System.Int32" ->  
+          let n,sigptr = sigptr_get_i32 bytes sigptr
+          ILAttribElem.Int32 n, sigptr
+      | ILType.Value tspec when tspec.Name = "System.UInt32" ->  
+          let n,sigptr = sigptr_get_u32 bytes sigptr
+          ILAttribElem.UInt32 n, sigptr
+      | ILType.Value tspec when tspec.Name = "System.Int64" ->  
+          let n,sigptr = sigptr_get_i64 bytes sigptr
+          ILAttribElem.Int64 n, sigptr
+      | ILType.Value tspec when tspec.Name = "System.UInt64" ->  
+          let n,sigptr = sigptr_get_u64 bytes sigptr
+          ILAttribElem.UInt64 n, sigptr
+      | ILType.Value tspec when tspec.Name = "System.Double" ->  
+          let n,sigptr = sigptr_get_ieee64 bytes sigptr
+          ILAttribElem.Double n, sigptr
+      | ILType.Value tspec when tspec.Name = "System.Single" ->  
+          let n,sigptr = sigptr_get_ieee32 bytes sigptr
+          ILAttribElem.Single n, sigptr
+      | ILType.Value tspec when tspec.Name = "System.Char" ->  
+          let n,sigptr = sigptr_get_u16 bytes sigptr
+          ILAttribElem.Char (char (int32 n)), sigptr
+      | ILType.Value tspec when tspec.Name = "System.Boolean" ->  
+          let n,sigptr = sigptr_get_byte bytes sigptr
+          ILAttribElem.Bool (not (n = 0)), sigptr
+      | ILType.Boxed tspec when tspec.Name = "System.String" ->  
+          let n,sigptr = sigptr_get_serstring_possibly_null bytes sigptr
+          ILAttribElem.String n, sigptr
+      | ILType.Boxed tspec when tspec.Name = "System.Type" ->  
+          let nOpt,sigptr = sigptr_get_serstring_possibly_null bytes sigptr
+          match nOpt with
+          | None -> ILAttribElem.TypeRef(None), sigptr
+          | Some n -> 
+            try
+                let parser = ILTypeSigParser(n)
+                parser.ParseTypeSpec(),sigptr
+            with e ->
+                failwith (sprintf "decodeILAttribData: error parsing type in custom attribute blob: %s" e.Message)
+      | ILType.Boxed tspec when tspec.Name = "System.Object" ->  
+          let et,sigptr = sigptr_get_u8 bytes sigptr
+          if et = 0xFFuy then 
+              ILAttribElem.Null, sigptr
+          else
+              let ty,sigptr = decodeCustomAttrElemType ilg bytes sigptr et 
+              parseVal ty sigptr 
+      | ILType.Array(shape,elemTy) when shape = ILArrayShape.SingleDimensional ->  
+          let n,sigptr = sigptr_get_i32 bytes sigptr
+          if n = 0xFFFFFFFF then ILAttribElem.Null,sigptr else
+          let rec parseElems acc n sigptr = 
+            if n = 0 then List.rev acc else
+            let v,sigptr = parseVal elemTy sigptr
+            parseElems (v ::acc) (n-1) sigptr
+          let elems = parseElems [] n sigptr
+          ILAttribElem.Array(elemTy,elems), sigptr
+      | ILType.Value _ ->  (* assume it is an enumeration *)
+          let n,sigptr = sigptr_get_i32 bytes sigptr
+          ILAttribElem.Int32 n, sigptr
+      | _ ->  failwith "decodeILAttribData: attribute data involves an enum or System.Type value"
+    let rec parseFixed argtys sigptr = 
+      match argtys with 
+        [] -> [],sigptr
+      | h::t -> 
+          let nh,sigptr = parseVal h sigptr
+          let nt,sigptr = parseFixed t sigptr
+          nh ::nt, sigptr
+    let fixedArgs,sigptr = parseFixed (ILList.toList ca.Method.FormalArgTypes) sigptr
+    let nnamed,sigptr = sigptr_get_u16 bytes sigptr
+    let rec parseNamed acc n sigptr = 
+      if n = 0 then List.rev acc else
+      let isPropByte,sigptr = sigptr_get_u8 bytes sigptr
+      let isProp = (int isPropByte = 0x54)
+      let et,sigptr = sigptr_get_u8 bytes sigptr
+      // We have a named value 
+      let ty,sigptr = 
+        // REVIEW: Post-M3, consider removing the restriction for scope - it's unnecessary
+        // because you can reconstruct scope using the qualified name from the CA Blob
+        if (0x50 = (int et) || 0x55 = (int et)) && Option.isSome scope then
+            let qualified_tname,sigptr = sigptr_get_serstring bytes sigptr
+            // we're already getting the qualified name from the binary blob
+            // if we don't split out the unqualified name from the qualified name,
+            // we'll write the qualified assembly reference string twice to the binary blob
+            let unqualified_tname = qualified_tname.Split([|','|]).[0]
+            let scoref = Option.get scope                    
+            let tref = mkILTyRef (scoref,unqualified_tname)
+            let tspec = mkILNonGenericTySpec tref
+            ILType.Value(tspec),sigptr            
+        else
+            decodeCustomAttrElemType ilg bytes sigptr et
+      let nm,sigptr = sigptr_get_serstring bytes sigptr
+      let v,sigptr = parseVal ty sigptr
+      parseNamed ((nm,ty,isProp,v) :: acc) (n-1) sigptr
+    let named = parseNamed [] (int nnamed) sigptr
+    fixedArgs,named     
+    
 // -------------------------------------------------------------------- 
 // Functions to collect up all the references in a full module or
 // asssembly manifest.  The process also allocates

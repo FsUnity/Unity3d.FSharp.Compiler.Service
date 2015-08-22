@@ -135,13 +135,13 @@ module internal ItemDescriptionsImpl =
     let rangeOfValRef preferFlag (vref:ValRef) =
         match preferFlag with 
         | None -> vref.Range 
-        | Some false -> vref.DefinitionRange 
+        | Some false -> vref.ImplRange
         | Some true -> vref.SigRange
 
     let rangeOfEntityRef preferFlag (eref:EntityRef) =
         match preferFlag with 
         | None -> eref.Range 
-        | Some false -> eref.DefinitionRange 
+        | Some false -> eref.ImplRange 
         | Some true -> eref.SigRange
 
    

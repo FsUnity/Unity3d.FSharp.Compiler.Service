@@ -2084,9 +2084,6 @@ and OptimizeLetRec cenv env (binds,bodyExpr,m) =
 //------------------------------------------------------------------------- 
 
 and OptimizeLinearExpr cenv env expr contf =
-
-    let expr = DetectAndOptimizeForExpression cenv.g OptimizeAllForExpressions expr
-
     if verboseOptimizations then dprintf "OptimizeLinearExpr\n";
     let expr = if cenv.settings.ExpandStructrualValues() then ExpandStructuralBinding cenv expr else expr 
     match expr with 

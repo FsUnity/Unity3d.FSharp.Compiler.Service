@@ -319,10 +319,10 @@ type TcConfigBuilder =
       mutable maxErrors : int
       mutable abortOnError : bool
       mutable baseAddress : int32 option
- #if DEBUG
+    #if DEBUG
       mutable writeGeneratedILFiles : bool (* write il files? *)  
       mutable showOptimizationData : bool
-#endif
+    #endif
       mutable showTerms     : bool 
       mutable writeTermsToFiles : bool 
       mutable doDetuple     : bool 
@@ -337,10 +337,11 @@ type TcConfigBuilder =
       mutable showTimes : bool
       mutable showLoadedAssemblies : bool
       mutable continueAfterParseFailure : bool
-#if EXTENSIONTYPING
+    #if EXTENSIONTYPING
       mutable showExtensionTypeMessages : bool
-#endif
+    #endif
       mutable pause : bool 
+      mutable indirectCallArrayMethods : bool
       mutable alwaysCallVirt : bool
       mutable noDebugData : bool
 
@@ -371,7 +372,6 @@ type TcConfigBuilder =
     member AddEmbeddedResource : string -> unit
     
     static member SplitCommandLineResourceInfo : string -> string * string * ILResourceAccess
-
 
     
 [<Sealed>]

@@ -8,6 +8,7 @@ module Microsoft.FSharp.Compiler.Interactive.Shell
 [<assembly: System.CLSCompliant(true)>]  
 do()
 
+open Internal
 open Internal.Utilities
 
 module Tc = Microsoft.FSharp.Compiler.TypeChecker

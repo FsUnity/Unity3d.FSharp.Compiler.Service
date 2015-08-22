@@ -5,12 +5,20 @@ namespace Internal
 
 
 open System
+open System.Text
 open System.Runtime.InteropServices
 
 [<AutoOpen>]
 module Extensions =
     type  Lazy<'T> with
         member self.Force() = self.Value
+
+
+    type StringBuilder with
+        /// Convenience method for sb.Length <- 0
+        member self.Clear() =
+            self.Length <- 0
+            self
 
 
 module Lazy = 
@@ -35,3 +43,5 @@ type WeakReference<'T when 'T : not struct>(target:'T, ?trackResurrection:bool) 
             not (obj.ReferenceEquals(o,null))
 
     new(target:'T) = WeakReference<'T>(target,false)
+
+

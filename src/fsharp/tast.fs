@@ -522,7 +522,7 @@ type Entity =
         x.Data.entity_range
 
     /// The range in the implementation, adjusted for an item in a signature
-    member x.DefinitionRange = 
+    member x.ImplRange = 
         match x.Data.entity_other_range with 
         | Some (r, true) -> r
         | _ -> x.Range
@@ -952,6 +952,7 @@ type Entity =
 
     /// Set the custom attributes on an F# type definition.
     member x.SetAttribs attribs = x.Data.entity_attribs <- attribs
+
 
 
 
@@ -2059,9 +2060,11 @@ and
     member x.Accessibility              = x.Data.val_access
 
     /// Range of the definition (implementation) of the value, used by Visual Studio 
-    member x.DefinitionRange            =  x.Data.DefinitionRange
+    /// Updated by mutation when the implementation is matched against the signature. 
+    member x.ImplRange            =  x.Data.ImplRange
 
     /// Range of the definition (signature) of the value, used by Visual Studio 
+    /// Updated by mutation when the implementation is matched against the signature. 
     member x.SigRange            = x.Data.SigRange
 
     /// The value of a value or member marked with [<LiteralAttribute>] 
@@ -2399,7 +2402,7 @@ and
     { val_logical_name: string
       val_compiled_name: string option
       val_range: range
-      /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
+      /// If the flag is true, this is the implementation range for an item in a signature, otherwise it is 
       /// the signature range for an item in an implementation
       mutable val_other_range: (range * bool) option 
       mutable val_type: TType
@@ -2445,7 +2448,7 @@ and
       /// XML documentation signature for the value
       mutable val_xmldocsig : string } 
 
-    member x.DefinitionRange            = 
+    member x.ImplRange            = 
         match x.val_other_range with
         | Some (m,true) -> m
         | _ -> x.val_range
@@ -2658,7 +2661,7 @@ and NonLocalEntityRef    =
     override x.ToString() = x.DisplayName
         
 and 
-    [<StructuredFormatDisplay("{LogicalName}")>]
+ [<StructuredFormatDisplay("{LogicalName}")>]
     [<NoEquality; NoComparison>]
     EntityRef = 
     { /// Indicates a reference to something bound in this CCU 
@@ -2718,7 +2721,7 @@ and
     member x.CompiledRepresentationForNamedType = x.Deref.CompiledRepresentationForNamedType
 
     /// The implementation definition location of the namespace, module or type
-    member x.DefinitionRange = x.Deref.DefinitionRange
+    member x.ImplRange = x.Deref.ImplRange
 
     /// The signature definition location of the namespace, module or type
     member x.SigRange = x.Deref.SigRange
@@ -3058,7 +3061,7 @@ and
     /// For other values it is just the actual parent.
     member x.ApparentParent             = x.Deref.ApparentParent
 
-    member x.DefinitionRange            = x.Deref.DefinitionRange
+    member x.ImplRange        = x.Deref.ImplRange
 
     member x.SigRange        = x.Deref.SigRange
 
