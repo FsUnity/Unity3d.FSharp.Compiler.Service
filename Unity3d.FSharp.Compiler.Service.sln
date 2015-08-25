@@ -5,7 +5,6 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project", "project", "{B6B68AE6-E7A4-4D43-9B34-FFA74BFE192B}"
 	ProjectSection(SolutionItems) = preProject
 		build.fsx = build.fsx
-		nuget\FSharp.Compiler.Service.nuspec = nuget\FSharp.Compiler.Service.nuspec
 		paket.dependencies = paket.dependencies
 		README.md = README.md
 		RELEASE_NOTES.md = RELEASE_NOTES.md

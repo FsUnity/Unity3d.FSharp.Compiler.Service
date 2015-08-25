@@ -11,8 +11,7 @@
     <AssemblyName>FSharp.Compiler.Service.Tests</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <Name>FSharp.Compiler.Service.Tests</Name>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
+    <TargetFrameworkProfile>Unity Full v3.5</TargetFrameworkProfile>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
     <OutputPath>..\..\bin\$(TargetFrameworkVersion)\</OutputPath>
@@ -69,10 +68,6 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="FSharp.Compiler.Service, Version=1.4.0.2, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\bin\$(TargetFrameworkVersion)\FSharp.Compiler.Service.dll</HintPath>
-      <SpecificVersion>True</SpecificVersion>
-    </Reference>
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>False</Private>
     </Reference>
@@ -95,6 +90,13 @@
       <Private>True</Private>
       <Paket>True</Paket>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\fsharp\FSharp.Compiler.Service\Unity3d.FSharp.Compiler.Service.fsproj">
+      <Name>Unity3d.FSharp.Compiler.Service</Name>
+      <Project>{2e4d67b4-522d-4cf7-97e4-ba940f0b18f3}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <Choose>
     <When Condition="($(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v3.5' Or $(TargetFrameworkVersion) == 'v4.0' Or $(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')) Or ($(TargetFrameworkIdentifier) == 'MonoAndroid') Or ($(TargetFrameworkIdentifier) == 'MonoTouch')">

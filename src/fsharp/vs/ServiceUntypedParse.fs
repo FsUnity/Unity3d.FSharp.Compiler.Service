@@ -375,9 +375,11 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
         scope.ValidateBreakpointLocationImpl(pos)
 
 module (*internal*) UntypedParseImpl =
-    
+    #if NET20
+    let emptyStringSet = HashSet<string>(HashIdentity.Structural)
+    #else
     let emptyStringSet = HashSet<string>()
-
+    #endif
     let GetRangeOfExprLeftOfDot(pos:pos,parseTreeOpt) =
         match parseTreeOpt with 
         | None -> None 
@@ -729,7 +731,12 @@ module (*internal*) UntypedParseImpl =
         let findSetters argList =
             match argList with
             | SynExpr.Paren(SynExpr.Tuple(parameters, _, _), _, _, _) -> 
+                #if NET20
+                let setters = HashSet(HashIdentity.Structural)
+                #else
                 let setters = HashSet()
+                #endif
+                
                 for p in parameters do
                     match p with
                     | Setter id -> ignore(setters.Add id.idText)

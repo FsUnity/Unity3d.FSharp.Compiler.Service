@@ -18,7 +18,7 @@
     <NoWarn>$(NoWarn);44;62;9</NoWarn>
     <ProjectGuid>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v2.0</TargetFrameworkVersion>
     <BaseAddress>0x06800000</BaseAddress>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
     <Tailcalls>true</Tailcalls>
@@ -31,6 +31,7 @@
     <DefineConstants>$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants Condition="$(TargetFrameworkVersion) == 'v4.5'">$(DefineConstants);FX_ATLEAST_45</DefineConstants>
     <DefineConstants Condition="$(TargetFrameworkVersion) == 'v4.0'">$(DefineConstants);FX_NO_GENERIC_WEAKREFERENCE</DefineConstants>
+    <DefineConstants Condition="$(TargetFrameworkVersion) == 'v2.0'">$(DefineConstants);NET20</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_40</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
     <DefineConstants>$(DefineConstants);TYPE_PROVIDER_SECURITY</DefineConstants>
@@ -41,7 +42,8 @@
     <DefineConstants>$(DefineConstants);NO_STRONG_NAMES</DefineConstants>
     <TargetFSharpCoreVersion>2.3.0.0</TargetFSharpCoreVersion>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\</SolutionDir>
-    <TargetFrameworkProfile>Unity Full v3.5</TargetFrameworkProfile>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
     <Name>Unity3d.FSharp.Compiler.Service</Name>
   </PropertyGroup>
   <PropertyGroup>
@@ -63,7 +65,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <Optimize>true</Optimize>
     <DocumentationFile>..\..\..\bin\v3.5\Unity3d.FSharp.Compiler.Service.XML</DocumentationFile>
-    <DefineConstants>;CROSS_PLATFORM_COMPILER;BE_SECURITY_TRANSPARENT;EXTENSIBLE_DUMPER;INCLUDE_METADATA_WRITER;COMPILER;NO_STRONG_NAMES</DefineConstants>
+    <DefineConstants>;CROSS_PLATFORM_COMPILER;BE_SECURITY_TRANSPARENT;EXTENSIBLE_DUMPER;INCLUDE_METADATA_WRITER;COMPILER;NO_STRONG_NAMES;NET20;FX_NO_TASK</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="InstallationDummyFile.txt">
@@ -591,36 +593,33 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Build.Engine">
+    <Reference Include="Microsoft.Build.Engine, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v3.5\Profile\Unity Full v3.5\Microsoft.Build.Engine.dll</HintPath>
+      <SpecificVersion>True</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Build.Framework">
+    <Reference Include="Microsoft.Build.Framework, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v3.5\Profile\Unity Full v3.5\Microsoft.Build.Framework.dll</HintPath>
+      <SpecificVersion>True</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Build.Tasks" />
-    <Reference Include="Microsoft.Build.Utilities" />
+    <Reference Include="Microsoft.Build.Tasks, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <SpecificVersion>True</SpecificVersion>
+    </Reference>
+    <Reference Include="Microsoft.Build.Utilities, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <SpecificVersion>True</SpecificVersion>
+    </Reference>
     <Reference Include="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
       <SpecificVersion>True</SpecificVersion>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml" />
-    <Reference Include="Microsoft.Build.Framework" Condition=" '$(TargetFrameworkVersion)' == 'v4.0'" />
-    <Reference Include="Microsoft.Build.Engine" Condition=" '$(TargetFrameworkVersion)' == 'v4.0'" />
-    <Reference Include="Microsoft.Build" Condition=" '$(TargetFrameworkVersion)' == 'v4.0'" />
-    <Reference Include="Microsoft.Build.Utilities.v4.0" Condition=" '$(TargetFrameworkVersion)' == 'v4.0'" />
-    <Reference Include="Microsoft.Build.Tasks.v4.0" Condition=" '$(TargetFrameworkVersion)' == 'v4.0'" />
-    <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(TargetFrameworkVersion)' == 'v4.5'">
+    <Reference Include="System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
       <SpecificVersion>True</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Build.Engine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(TargetFrameworkVersion)' == 'v4.5'">
+    <Reference Include="System.Threading, Version=1.0.2856.102, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
+      <HintPath>..\..\..\packages\TaskParallelLibrary\lib\Net35\System.Threading.dll</HintPath>
       <SpecificVersion>True</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(TargetFrameworkVersion)' == 'v4.5'">
+    <Reference Include="System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
       <SpecificVersion>True</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Build.Utilities.v12.0" Condition=" '$(TargetFrameworkVersion)' == 'v4.5'" />
-    <Reference Include="Microsoft.Build.Tasks.v12.0" Condition=" '$(TargetFrameworkVersion)' == 'v4.5'" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>False</Private>
     </Reference>
@@ -632,16 +631,17 @@
     <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
-    <DefineConstants>DEBUG; ;CROSS_PLATFORM_COMPILER;BE_SECURITY_TRANSPARENT;TYPE_PROVIDER_SECURITY;EXTENSIBLE_DUMPER;INCLUDE_METADATA_WRITER;COMPILER;NO_STRONG_NAMES</DefineConstants>
+    <DefineConstants>DEBUG; ;CROSS_PLATFORM_COMPILER;BE_SECURITY_TRANSPARENT;EXTENSIBLE_DUMPER;INCLUDE_METADATA_WRITER;COMPILER;NO_STRONG_NAMES</DefineConstants>
     <Optimize>false</Optimize>
     <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
-    <DocumentationFile>..\..\..\bin\$(TargetFrameworkVersion)\FSharp.Compiler.Service.XML</DocumentationFile>
+    <DocumentationFile>..\..\..\bin\v3.5\Debug\FSharp.Compiler.Service.XML</DocumentationFile>
     <PlatformTarget>x64</PlatformTarget>
+    <OutputPath>..\..\..\bin\v3.5\Debug</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <Optimize>true</Optimize>
     <DocumentationFile>..\..\..\bin\$(TargetFrameworkVersion)\FSharp.Compiler.Service.XML</DocumentationFile>
-    <DefineConstants>;CROSS_PLATFORM_COMPILER;BE_SECURITY_TRANSPARENT;TYPE_PROVIDER_SECURITY;EXTENSIBLE_DUMPER;INCLUDE_METADATA_WRITER;COMPILER;NO_STRONG_NAMES</DefineConstants>
+    <DefineConstants>;CROSS_PLATFORM_COMPILER;BE_SECURITY_TRANSPARENT;EXTENSIBLE_DUMPER;INCLUDE_METADATA_WRITER;COMPILER;NO_STRONG_NAMES</DefineConstants>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -663,126 +663,11 @@
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v2.0' Or $(TargetFrameworkVersion) == 'v3.0' Or $(TargetFrameworkVersion) == 'v3.5')">
       <ItemGroup>
-        <Reference Include="FSharp.PowerPack">
+        <Reference Include="FSharp.PowerPack, Version=2.0.0.0, Culture=neutral, PublicKeyToken=a19089b1c74d0809">
           <HintPath>..\..\..\packages\FSPowerPack.Core.Community\Lib\Net20\FSharp.PowerPack.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-    <When Condition="$(TargetFrameworkIdentifier) == 'Silverlight' And $(TargetFrameworkVersion) == 'v3.0'">
-      <ItemGroup>
-        <Reference Include="FSharp.PowerPack.Compatibility">
-          <HintPath>..\..\..\packages\FSPowerPack.Core.Community\Lib\sl3\FSharp.PowerPack.Compatibility.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-        <Reference Include="FSharp.PowerPack">
-          <HintPath>..\..\..\packages\FSPowerPack.Core.Community\Lib\sl3\FSharp.PowerPack.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-    <When Condition="$(TargetFrameworkIdentifier) == 'Silverlight' And $(TargetFrameworkVersion) == 'v4.0'">
-      <ItemGroup>
-        <Reference Include="FSharp.PowerPack.Compatibility">
-          <HintPath>..\..\..\packages\FSPowerPack.Core.Community\Lib\sl4\FSharp.PowerPack.Compatibility.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-        <Reference Include="FSharp.PowerPack">
-          <HintPath>..\..\..\packages\FSPowerPack.Core.Community\Lib\sl4\FSharp.PowerPack.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-    <When Condition="$(TargetFrameworkIdentifier) == 'Silverlight' And $(TargetFrameworkVersion) == 'v5.0'">
-      <ItemGroup>
-        <Reference Include="FSharp.PowerPack.Compatibility">
-          <HintPath>..\..\..\packages\FSPowerPack.Core.Community\Lib\sl5\FSharp.PowerPack.Compatibility.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-        <Reference Include="FSharp.PowerPack.Linq">
-          <HintPath>..\..\..\packages\FSPowerPack.Core.Community\Lib\sl5\FSharp.PowerPack.Linq.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-        <Reference Include="FSharp.PowerPack">
-          <HintPath>..\..\..\packages\FSPowerPack.Core.Community\Lib\sl5\FSharp.PowerPack.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-    <When Condition="$(TargetFrameworkIdentifier) == 'WindowsPhone' And ($(TargetFrameworkVersion) == 'v7.1' Or $(TargetFrameworkVersion) == 'v8.0' Or $(TargetFrameworkVersion) == 'v8.1')">
-      <ItemGroup>
-        <Reference Include="FSharp.PowerPack.Compatibility">
-          <HintPath>..\..\..\packages\FSPowerPack.Core.Community\Lib\sl4-windowsphone71\FSharp.PowerPack.Compatibility.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-        <Reference Include="FSharp.PowerPack">
-          <HintPath>..\..\..\packages\FSPowerPack.Core.Community\Lib\sl4-windowsphone71\FSharp.PowerPack.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-    <When Condition="($(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.0' Or $(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')) Or ($(TargetFrameworkIdentifier) == 'MonoAndroid') Or ($(TargetFrameworkIdentifier) == 'MonoTouch')">
-      <ItemGroup>
-        <Reference Include="FSharp.PowerPack">
-          <HintPath>..\..\..\packages\FSPowerPack.Core.Community\Lib\Net40\FSharp.PowerPack.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v2.0' Or $(TargetFrameworkVersion) == 'v3.0' Or $(TargetFrameworkVersion) == 'v3.5')" />
-    <When Condition="($(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.0' Or $(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')) Or ($(TargetFrameworkIdentifier) == 'MonoAndroid') Or ($(TargetFrameworkIdentifier) == 'MonoTouch')">
-      <ItemGroup>
-        <Reference Include="FSharp.PowerPack.Linq">
-          <HintPath>..\..\..\packages\FSPowerPack.Linq.Community\Lib\Net40\FSharp.PowerPack.Linq.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v2.0' Or $(TargetFrameworkVersion) == 'v3.0' Or $(TargetFrameworkVersion) == 'v3.5')" />
-    <When Condition="($(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.0' Or $(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')) Or ($(TargetFrameworkIdentifier) == 'MonoAndroid') Or ($(TargetFrameworkIdentifier) == 'MonoTouch')">
-      <ItemGroup>
-        <Reference Include="FSharp.PowerPack.Metadata">
-          <HintPath>..\..\..\packages\FSPowerPack.Metadata.Community\Lib\Net40\FSharp.PowerPack.Metadata.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="($(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.0' Or $(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')) Or ($(TargetFrameworkIdentifier) == 'MonoAndroid') Or ($(TargetFrameworkIdentifier) == 'MonoTouch')">
-      <ItemGroup>
-        <Reference Include="FSharp.PowerPack.Parallel.Seq">
-          <HintPath>..\..\..\packages\FSPowerPack.Parallel.Seq.Community\Lib\Net40\FSharp.PowerPack.Parallel.Seq.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="($(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v3.5' Or $(TargetFrameworkVersion) == 'v4.0' Or $(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')) Or ($(TargetFrameworkIdentifier) == 'MonoAndroid') Or ($(TargetFrameworkIdentifier) == 'MonoTouch')">
-      <ItemGroup>
-        <Reference Include="System.Threading">
-          <HintPath>..\..\..\packages\TaskParallelLibrary\lib\Net35\System.Threading.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
+          <SpecificVersion>True</SpecificVersion>
         </Reference>
       </ItemGroup>
     </When>

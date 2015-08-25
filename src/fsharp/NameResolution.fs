@@ -1665,7 +1665,12 @@ let SelectPropInfosFromExtMembers (infoReader:InfoReader,ad,optFilter) declaring
     let seen = HashSet(ExtensionMember.Comparer g)
     let propCollector = new PropertyCollector(g,amap,m,declaringTy,optFilter,ad)
     for emem in extMemInfos do
+        #if NET20
+        if not (seen.Contains(emem) ) then 
+            seen.Add emem
+        #else
         if seen.Add emem then
+        #endif
             match emem with 
             | FSExtMem (vref,_pri) -> 
                 match vref.MemberInfo with 
@@ -1712,7 +1717,12 @@ let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m
     let seen = HashSet(ExtensionMember.Comparer g)
     [
         for emem in extMemInfos do
+            #if NET20
+            if not (seen.Contains(emem) ) then 
+                seen.Add emem
+            #else
             if seen.Add emem then
+            #endif
                 match emem with 
                 | FSExtMem (vref,pri) -> 
                     match vref.MemberInfo with 

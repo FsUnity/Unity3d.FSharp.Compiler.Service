@@ -114,7 +114,11 @@ module (*internal*) Microsoft.FSharp.Compiler.PrettyNaming
 
     /// The set of characters usable in custom operators.
     let private opCharSet =
+    #if NET20
+        let t = new HashSet<_>(HashIdentity.Structural)
+    #else
         let t = new HashSet<_>()
+    #endif
         for (c,_) in opCharTranslateTable do
             t.Add(c) |> ignore
         t
